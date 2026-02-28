@@ -34,6 +34,8 @@ extends Control
 @onready var max_efficiency_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine/MaxEfficiencySpin
 @onready var max_click_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine
 @onready var max_click_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine/MaxClickSpin
+@onready var materials_list: VBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaterialsList
+@onready var sell_all_materials_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/SellAllMaterialsButton
 
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
@@ -65,6 +67,7 @@ func _ready() -> void:
 	feedback_label.text = ""
 	open_shop_button.pressed.connect(_on_open_shop_pressed)
 	close_shop_button.pressed.connect(_on_close_shop_pressed)
+	sell_all_materials_button.pressed.connect(_on_sell_all_materials_pressed)
 	refresh_ui()
 
 func _process(delta: float) -> void:
@@ -210,7 +213,61 @@ func refresh_ui() -> void:
 		max_efficiency_spin.set_value_no_signal(0.0)
 		max_click_spin.set_value_no_signal(0.0)
 
+	rebuild_materials_list()
+	var has_materials: bool = false
+	for id in Economy.get_mineral_ids():
+		if GameState.get_mineral_amount(id) > 0.0:
+			has_materials = true
+			break
+	sell_all_materials_button.disabled = not has_materials
+
 	refresh_overclock_ui()
+
+func rebuild_materials_list() -> void:
+	for child in materials_list.get_children():
+		child.queue_free()
+
+	var mineral_ids: Array[String] = Economy.get_mineral_ids()
+	mineral_ids.sort_custom(func(a: String, b: String) -> bool:
+		var rarity_a: int = Economy.get_mineral_rarity(a)
+		var rarity_b: int = Economy.get_mineral_rarity(b)
+		if rarity_a == rarity_b:
+			return Economy.get_mineral_name(a) < Economy.get_mineral_name(b)
+		return rarity_a < rarity_b
+	)
+
+	for id in mineral_ids:
+		var amount: float = GameState.get_mineral_amount(id)
+		if amount <= 0.0:
+			continue
+
+		var row: HBoxContainer = HBoxContainer.new()
+
+		var name_label: Label = Label.new()
+		name_label.text = Economy.get_mineral_name(id)
+		row.add_child(name_label)
+
+		var amount_label: Label = Label.new()
+		amount_label.text = "Amount: %.1f" % amount
+		row.add_child(amount_label)
+
+		var price_label: Label = Label.new()
+		price_label.text = "Price: %.1f/u" % Economy.get_sell_price_per_unit(id)
+		row.add_child(price_label)
+
+		var sell10_btn: Button = Button.new()
+		sell10_btn.text = "Sell 10"
+		sell10_btn.set_meta("mineral_id", id)
+		sell10_btn.pressed.connect(_on_sell10_pressed)
+		row.add_child(sell10_btn)
+
+		var sell_all_btn: Button = Button.new()
+		sell_all_btn.text = "Sell All"
+		sell_all_btn.set_meta("mineral_id", id)
+		sell_all_btn.pressed.connect(_on_sellall_pressed)
+		row.add_child(sell_all_btn)
+
+		materials_list.add_child(row)
 
 func refresh_overclock_ui() -> void:
 	overclock_button.disabled = not GameState.can_activate_overclock()
@@ -279,6 +336,25 @@ func _on_max_efficiency_changed(value: float) -> void:
 
 func _on_max_click_changed(value: float) -> void:
 	GameState.set_max_click_limit(int(value))
+
+func _on_sell10_pressed() -> void:
+	var sender_id: int = get_signal_sender_id()
+	var sender: Object = instance_from_id(sender_id)
+	if sender == null or not sender.has_meta("mineral_id"):
+		return
+	var id: String = str(sender.get_meta("mineral_id"))
+	GameState.sell_mineral(id, 10.0)
+
+func _on_sellall_pressed() -> void:
+	var sender_id: int = get_signal_sender_id()
+	var sender: Object = instance_from_id(sender_id)
+	if sender == null or not sender.has_meta("mineral_id"):
+		return
+	var id: String = str(sender.get_meta("mineral_id"))
+	GameState.sell_all_of_mineral(id)
+
+func _on_sell_all_materials_pressed() -> void:
+	GameState.sell_all_minerals()
 
 func show_feedback(gain: float) -> void:
 	feedback_serial += 1
