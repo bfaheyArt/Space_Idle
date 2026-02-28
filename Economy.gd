@@ -18,6 +18,40 @@ const AUTO_BUY_EFF_BASE_COST: float = 500.0
 const AUTO_BUY_CLICK_BASE_COST: float = 500.0
 const AUTO_PRIORITY_CONTROLLER_BASE_COST: float = 800.0
 
+enum Rarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, SUPER_RARE }
+
+const MINERALS := {
+	"iron": {"name": "Iron", "rarity": Rarity.COMMON, "base_price": 1.0},
+	"copper": {"name": "Copper", "rarity": Rarity.UNCOMMON, "base_price": 3.0},
+	"tin": {"name": "Tin", "rarity": Rarity.RARE, "base_price": 8.0},
+	"silver": {"name": "Silver", "rarity": Rarity.EPIC, "base_price": 25.0},
+	"gold": {"name": "Gold", "rarity": Rarity.LEGENDARY, "base_price": 80.0},
+	"platinum": {"name": "Platinum", "rarity": Rarity.SUPER_RARE, "base_price": 250.0},
+}
+
+func get_mineral_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for id in MINERALS.keys():
+		ids.append(str(id))
+	return ids
+
+func get_mineral_def(id: String) -> Dictionary:
+	if not MINERALS.has(id):
+		return {}
+	return MINERALS[id]
+
+func get_mineral_name(id: String) -> String:
+	var mineral_def: Dictionary = get_mineral_def(id)
+	return str(mineral_def.get("name", ""))
+
+func get_mineral_base_price(id: String) -> float:
+	var mineral_def: Dictionary = get_mineral_def(id)
+	return float(mineral_def.get("base_price", 0.0))
+
+func get_mineral_rarity(id: String) -> int:
+	var mineral_def: Dictionary = get_mineral_def(id)
+	return int(mineral_def.get("rarity", -1))
+
 func get_drone_cost(drones_owned: int) -> float:
 	return DRONE_BASE_COST * pow(DRONE_COST_GROWTH, drones_owned)
 
