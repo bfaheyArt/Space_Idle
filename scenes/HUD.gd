@@ -2,6 +2,7 @@ extends Control
 
 @onready var ore_label: Label = $VBox/OreLabel
 @onready var cash_label: Label = $VBox/CashLabel
+@onready var mineral_label: Label = $VBox/MineralLabel
 @onready var rate_label: Label = $VBox/RateLabel
 @onready var mine_button: Button = $VBox/MineButton
 @onready var overclock_bar: ProgressBar = $VBox/OverclockPanel/OverclockBar
@@ -68,6 +69,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	GameState.update_overclock(delta)
 	GameState.update_automation(delta)
+	GameState.update_mineral_mining(delta)
 	GameState.add_ore(GameState.get_ore_per_sec() * delta)
 
 	if GameState.overclock_active:
@@ -104,6 +106,11 @@ func refresh_ui() -> void:
 
 	ore_label.text = "Ore: %.1f" % GameState.ore
 	cash_label.text = "Cash: %.1f" % GameState.cash
+	mineral_label.text = "Iron: %.1f | Copper: %.1f | Tin: %.1f" % [
+		GameState.get_mineral_amount("iron"),
+		GameState.get_mineral_amount("copper"),
+		GameState.get_mineral_amount("tin")
+	]
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
 	mine_button.text = "MINE (+%.1f)" % click_gain
 	buy_drone_button.text = "Buy Drone (%.1f)" % drone_cost
