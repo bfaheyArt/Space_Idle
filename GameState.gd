@@ -64,7 +64,7 @@ func add_ore(amount: float) -> void:
 	emit_signal("ore_changed", ore)
 
 func add_cash(amount: float) -> void:
-	if is_zero_approx(amount):
+	if amount == 0.0:
 		return
 	cash = max(cash + amount, 0.0)
 	emit_signal("cash_changed", cash)
@@ -79,11 +79,15 @@ func spend_cash(cost: float) -> bool:
 	return true
 
 func add_mineral(id: String, amount: float) -> void:
+	if is_zero_approx(amount):
+		return
 	var economy = _get_economy()
 	if economy.get_mineral_def(id).is_empty():
 		return
 	var current: float = float(minerals.get(id, 0.0))
 	var next_amount: float = max(current + amount, 0.0)
+	if is_equal_approx(next_amount, current):
+		return
 	minerals[id] = next_amount
 	emit_signal("minerals_changed")
 
