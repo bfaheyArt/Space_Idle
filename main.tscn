@@ -8,7 +8,8 @@ process_mode = 3
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="HUD" parent="CanvasLayer" instance=ExtResource("1_ig7tw")]
-
 [node name="AsteroidView" parent="CanvasLayer" instance=ExtResource("2_0xm2m")]
 position = Vector2(571, 316)
+
+[node name="HUD" parent="CanvasLayer" instance=ExtResource("1_ig7tw")]
+top_level = true
