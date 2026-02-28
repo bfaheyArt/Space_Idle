@@ -252,6 +252,9 @@ func _is_category_enabled(category: int) -> bool:
 			return false
 
 func _is_category_limited(category: int) -> bool:
+	if not has_auto_priority_controller:
+		return false
+
 	match category:
 		AutomationPriority.DRONES:
 			return max_drones_limit > 0 and drones_owned >= max_drones_limit
@@ -272,6 +275,9 @@ func _attempt_buy_category(category: int) -> bool:
 			return buy_click_upgrade()
 		_:
 			return false
+
+func _get_fallback_order() -> Array[int]:
+	return [AutomationPriority.DRONES, AutomationPriority.EFFICIENCY, AutomationPriority.CLICK]
 
 func _get_priority_order() -> Array[int]:
 	match automation_priority:
@@ -295,28 +301,22 @@ func update_automation(delta: float) -> void:
 		if has_auto_overclock and auto_overclock_enabled and can_activate_overclock():
 			activate_overclock()
 
-		if not has_auto_priority_controller:
-			if has_auto_buy_drones and auto_buy_drones_enabled:
-				for _i in range(3):
-					if not buy_drone():
+		var purchases_made: int = 0
+		var order: Array[int] = _get_priority_order() if has_auto_priority_controller else _get_fallback_order()
+		while purchases_made < 5:
+			var purchased_this_pass: bool = false
+			for category in order:
+				if not _is_category_enabled(category):
+					continue
+				if _is_category_limited(category):
+					continue
+				if _attempt_buy_category(category):
+					purchases_made += 1
+					purchased_this_pass = true
+					if purchases_made >= 5:
 						break
-		else:
-			var purchases_made: int = 0
-			var priority_order: Array[int] = _get_priority_order()
-			while purchases_made < 5:
-				var purchased_this_pass: bool = false
-				for category in priority_order:
-					if not _is_category_enabled(category):
-						continue
-					if _is_category_limited(category):
-						continue
-					if _attempt_buy_category(category):
-						purchases_made += 1
-						purchased_this_pass = true
-						if purchases_made >= 5:
-							break
-				if not purchased_this_pass:
-					break
+			if not purchased_this_pass:
+				break
 
 	if _automation_elapsed >= 0.25:
 		_automation_elapsed = fmod(_automation_elapsed, 0.25)
