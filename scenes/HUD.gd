@@ -1,6 +1,7 @@
 extends Control
 
 @onready var ore_label: Label = $VBox/OreLabel
+@onready var cash_label: Label = $VBox/CashLabel
 @onready var rate_label: Label = $VBox/RateLabel
 @onready var mine_button: Button = $VBox/MineButton
 @onready var overclock_bar: ProgressBar = $VBox/OverclockPanel/OverclockBar
@@ -39,6 +40,7 @@ var feedback_serial: int = 0
 
 func _ready() -> void:
 	GameState.ore_changed.connect(_on_game_state_changed)
+	GameState.cash_changed.connect(_on_game_state_changed)
 	GameState.stats_changed.connect(_on_game_state_changed)
 	mine_button.pressed.connect(_on_mine_pressed)
 	overclock_button.pressed.connect(_on_overclock_pressed)
@@ -101,6 +103,7 @@ func refresh_ui() -> void:
 	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
 
 	ore_label.text = "Ore: %.1f" % GameState.ore
+	cash_label.text = "Cash: %.1f" % GameState.cash
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
 	mine_button.text = "MINE (+%.1f)" % click_gain
 	buy_drone_button.text = "Buy Drone (%.1f)" % drone_cost
