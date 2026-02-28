@@ -30,6 +30,17 @@ const MINERALS := {
 	"platinum": {"name": "Platinum", "rarity": Rarity.SUPER_RARE, "base_price": 250.0},
 }
 
+const DROP_TABLES := {
+	"default": {
+		"iron": 80.0,
+		"copper": 15.0,
+		"tin": 5.0,
+		"silver": 1.0,
+		"gold": 0.2,
+		"platinum": 0.05,
+	},
+}
+
 func get_mineral_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for id in MINERALS.keys():
@@ -59,6 +70,74 @@ func get_mineral_rarity(id: String) -> int:
 	var mineral_def: Dictionary = get_mineral_def(id)
 	return int(mineral_def.get("rarity", -1))
 
+func get_drop_table_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for id in DROP_TABLES.keys():
+		ids.append(str(id))
+	return ids
+
+func get_drop_table(table_id: String) -> Dictionary:
+	if table_id.is_empty() or not DROP_TABLES.has(table_id):
+		return DROP_TABLES.get("default", {})
+	return DROP_TABLES[table_id]
+
+func roll_mineral_from_table(
+	rng: RandomNumberGenerator,
+	table_id: String = "default",
+	rarity_bonus: float = 0.0
+) -> String:
+	var effective_table_id: String = table_id
+	if effective_table_id.is_empty() or not DROP_TABLES.has(effective_table_id):
+		effective_table_id = "default"
+
+	var table: Dictionary = DROP_TABLES.get(effective_table_id, {})
+	var safe_rarity_bonus: float = max(rarity_bonus, 0.0)
+	var weighted_entries: Array[Dictionary] = []
+
+	for id in table.keys():
+		var mineral_id: String = str(id)
+		if not MINERALS.has(mineral_id):
+			continue
+
+		var base_weight: float = float(table[id])
+		var rarity_multiplier: float = 1.0
+		match get_mineral_rarity(mineral_id):
+			Rarity.UNCOMMON:
+				rarity_multiplier = 1.0 + 0.15 * safe_rarity_bonus
+			Rarity.RARE:
+				rarity_multiplier = 1.0 + 0.30 * safe_rarity_bonus
+			Rarity.EPIC:
+				rarity_multiplier = 1.0 + 0.50 * safe_rarity_bonus
+			Rarity.LEGENDARY:
+				rarity_multiplier = 1.0 + 0.75 * safe_rarity_bonus
+			Rarity.SUPER_RARE:
+				rarity_multiplier = 1.0 + 1.00 * safe_rarity_bonus
+			_:
+				rarity_multiplier = 1.0
+
+		var final_weight: float = base_weight * rarity_multiplier
+		if final_weight <= 0.0:
+			continue
+
+		weighted_entries.append({"id": mineral_id, "weight": final_weight})
+
+	if weighted_entries.is_empty():
+		return "iron"
+
+	var total_weight: float = 0.0
+	for entry in weighted_entries:
+		total_weight += float(entry["weight"])
+
+	var roll: float = rng.randf() * total_weight
+	var cumulative: float = 0.0
+	var last_id: String = str(weighted_entries[weighted_entries.size() - 1]["id"])
+	for entry in weighted_entries:
+		cumulative += float(entry["weight"])
+		if roll < cumulative:
+			return str(entry["id"])
+
+	return last_id
+
 func get_drone_cost(drones_owned: int) -> float:
 	return DRONE_BASE_COST * pow(DRONE_COST_GROWTH, drones_owned)
 
@@ -77,12 +156,7 @@ func get_base_mining_rolls_per_sec(drones_owned: int, efficiency_level: int) -> 
 	return BASE_MINING_ROLLS_PER_SEC * drones_owned * efficiency_multiplier
 
 func roll_basic_mineral(rng: RandomNumberGenerator) -> String:
-	var roll: float = rng.randf()
-	if roll < 0.80:
-		return "iron"
-	if roll < 0.95:
-		return "copper"
-	return "tin"
+	return roll_mineral_from_table(rng, "default", 0.0)
 
 func get_click_gain(click_level: int) -> float:
 	return CLICK_GAIN_BASE * pow(CLICK_GAIN_GROWTH, click_level)
