@@ -58,7 +58,7 @@ func _on_game_state_changed(_value: Variant = null) -> void:
 
 func _on_mine_pressed() -> void:
 	var gain: float = GameState.get_click_gain()
-	GameState.add_ore(gain)
+	GameState.manual_mine()
 	show_feedback(gain)
 
 func _on_buy_drone_pressed() -> void:
