@@ -13,8 +13,8 @@ var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	_rng.randomize()
-	if GameState.stats_changed.is_connected(_on_stats_changed) == false:
-		GameState.stats_changed.connect(_on_stats_changed)
+	if GameState.drones_changed.is_connected(_on_drones_changed) == false:
+		GameState.drones_changed.connect(_on_drones_changed)
 	if GameState.mined.is_connected(_on_mined) == false:
 		GameState.mined.connect(_on_mined)
 	rebuild_drones()
@@ -23,8 +23,14 @@ func _process(delta: float) -> void:
 	_update_drones(delta)
 	_update_sparks(delta)
 
-func _on_stats_changed() -> void:
+func _on_drones_changed(_count: int) -> void:
 	rebuild_drones()
+
+
+func _drone_unit_noise(index: int, salt: int) -> float:
+	var n: int = index * 92821 + salt * 68917 + 1337
+	var mixed: int = abs(n % 10000)
+	return float(mixed) / 9999.0
 
 func rebuild_drones() -> void:
 	for child in drones_root.get_children():
@@ -34,12 +40,14 @@ func rebuild_drones() -> void:
 	if count <= 0:
 		return
 
-	for i in count:
+	for i in range(count):
 		var drone := Node2D.new()
 		drone.name = "Drone%d" % i
 		drone.set_meta("orbit_angle", TAU * (float(i) / float(count)))
-		drone.set_meta("orbit_radius", DRONE_ORBIT_RADIUS + _rng.randf_range(-18.0, 18.0))
-		drone.set_meta("orbit_speed", DRONE_BASE_SPEED + _rng.randf_range(-0.15, 0.18))
+		var radius_noise := _drone_unit_noise(i, 1)
+		var speed_noise := _drone_unit_noise(i, 2)
+		drone.set_meta("orbit_radius", DRONE_ORBIT_RADIUS + lerpf(-18.0, 18.0, radius_noise))
+		drone.set_meta("orbit_speed", DRONE_BASE_SPEED + lerpf(-0.15, 0.18, speed_noise))
 
 		var body := ColorRect.new()
 		body.name = "Body"
@@ -74,7 +82,7 @@ func _update_drones(delta: float) -> void:
 
 func _on_mined(amount: float) -> void:
 	var spark_count := _rng.randi_range(6, 10)
-	for _i in spark_count:
+	for _i in range(spark_count):
 		_spawn_spark(amount)
 
 func _spawn_spark(_amount: float) -> void:
