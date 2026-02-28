@@ -14,6 +14,9 @@ const AUTO_OVERCLOCK_BASE_COST: float = 200.0
 const AUTO_OVERCLOCK_GROWTH: float = 1.0
 const AUTO_BUY_DRONES_BASE_COST: float = 300.0
 const AUTO_BUY_DRONES_GROWTH: float = 1.0
+const AUTO_BUY_EFF_BASE_COST: float = 500.0
+const AUTO_BUY_CLICK_BASE_COST: float = 500.0
+const AUTO_PRIORITY_CONTROLLER_BASE_COST: float = 800.0
 
 func get_drone_cost(drones_owned: int) -> float:
 	return DRONE_BASE_COST * pow(DRONE_COST_GROWTH, drones_owned)
@@ -40,3 +43,18 @@ func get_auto_buy_drones_cost(purchased: bool) -> float:
 	if purchased:
 		return INF
 	return AUTO_BUY_DRONES_BASE_COST
+
+func get_auto_buy_eff_cost(purchased: bool) -> float:
+	if purchased:
+		return INF
+	return AUTO_BUY_EFF_BASE_COST
+
+func get_auto_buy_click_cost(purchased: bool) -> float:
+	if purchased:
+		return INF
+	return AUTO_BUY_CLICK_BASE_COST
+
+func get_auto_priority_controller_cost(purchased: bool) -> float:
+	if purchased:
+		return INF
+	return AUTO_PRIORITY_CONTROLLER_BASE_COST
