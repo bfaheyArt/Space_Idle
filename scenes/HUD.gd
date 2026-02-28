@@ -150,7 +150,15 @@ func refresh_ui() -> void:
 	ore_label.text = "Ore: %.1f" % GameState.ore
 	cash_label.text = "Cash: %.1f" % GameState.cash
 	var parts: Array[String] = []
-	for id: String in Economy.get_mineral_ids():
+	var ids: Array[String] = Economy.get_mineral_ids()
+	ids.sort_custom(func(a: String, b: String) -> bool:
+		var rarity_a: int = Economy.get_mineral_rarity(a)
+		var rarity_b: int = Economy.get_mineral_rarity(b)
+		if rarity_a == rarity_b:
+			return Economy.get_mineral_name(a) < Economy.get_mineral_name(b)
+		return rarity_a < rarity_b
+	)
+	for id: String in ids:
 		parts.append("%s: %.1f" % [Economy.get_mineral_name(id), GameState.get_mineral_amount(id)])
 	mineral_label.text = " | ".join(parts)
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
