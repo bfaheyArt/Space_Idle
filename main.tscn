@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://cum1iydraum61"]
+
+[node name="Main" type="Node2D"]
+process_mode = 3
