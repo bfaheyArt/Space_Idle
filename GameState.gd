@@ -16,6 +16,16 @@ var has_auto_overclock: bool = false
 var auto_overclock_enabled: bool = false
 var has_auto_buy_drones: bool = false
 var auto_buy_drones_enabled: bool = false
+var has_auto_buy_efficiency: bool = false
+var auto_buy_efficiency_enabled: bool = false
+var has_auto_buy_click: bool = false
+var auto_buy_click_enabled: bool = false
+var has_auto_priority_controller: bool = false
+enum AutomationPriority { DRONES, EFFICIENCY, CLICK }
+var automation_priority: int = AutomationPriority.DRONES
+var max_drones_limit: int = 0
+var max_efficiency_limit: int = 0
+var max_click_limit: int = 0
 var _automation_elapsed: float = 0.0
 var last_save_unix: int = 0
 
@@ -145,6 +155,41 @@ func buy_auto_buy_drones() -> bool:
 	emit_signal("stats_changed")
 	return true
 
+func buy_auto_buy_efficiency() -> bool:
+	if has_auto_buy_efficiency:
+		return false
+	var economy = _get_economy()
+	var cost: float = economy.get_auto_buy_eff_cost(false)
+	if not spend(cost):
+		return false
+	has_auto_buy_efficiency = true
+	auto_buy_efficiency_enabled = true
+	emit_signal("stats_changed")
+	return true
+
+func buy_auto_buy_click() -> bool:
+	if has_auto_buy_click:
+		return false
+	var economy = _get_economy()
+	var cost: float = economy.get_auto_buy_click_cost(false)
+	if not spend(cost):
+		return false
+	has_auto_buy_click = true
+	auto_buy_click_enabled = true
+	emit_signal("stats_changed")
+	return true
+
+func buy_auto_priority_controller() -> bool:
+	if has_auto_priority_controller:
+		return false
+	var economy = _get_economy()
+	var cost: float = economy.get_auto_priority_controller_cost(false)
+	if not spend(cost):
+		return false
+	has_auto_priority_controller = true
+	emit_signal("stats_changed")
+	return true
+
 func set_auto_overclock_enabled(value: bool) -> void:
 	if not has_auto_overclock:
 		return
@@ -156,6 +201,86 @@ func set_auto_buy_drones_enabled(value: bool) -> void:
 		return
 	auto_buy_drones_enabled = value
 	emit_signal("stats_changed")
+
+func set_auto_buy_efficiency_enabled(value: bool) -> void:
+	if not has_auto_buy_efficiency:
+		return
+	auto_buy_efficiency_enabled = value
+	emit_signal("stats_changed")
+
+func set_auto_buy_click_enabled(value: bool) -> void:
+	if not has_auto_buy_click:
+		return
+	auto_buy_click_enabled = value
+	emit_signal("stats_changed")
+
+func set_automation_priority(value: int) -> void:
+	if not has_auto_priority_controller:
+		return
+	if value < AutomationPriority.DRONES or value > AutomationPriority.CLICK:
+		return
+	automation_priority = value
+	emit_signal("stats_changed")
+
+func set_max_drones_limit(value: int) -> void:
+	if not has_auto_priority_controller:
+		return
+	max_drones_limit = int(max(0, value))
+	emit_signal("stats_changed")
+
+func set_max_efficiency_limit(value: int) -> void:
+	if not has_auto_priority_controller:
+		return
+	max_efficiency_limit = int(max(0, value))
+	emit_signal("stats_changed")
+
+func set_max_click_limit(value: int) -> void:
+	if not has_auto_priority_controller:
+		return
+	max_click_limit = int(max(0, value))
+	emit_signal("stats_changed")
+
+func _is_category_enabled(category: int) -> bool:
+	match category:
+		AutomationPriority.DRONES:
+			return has_auto_buy_drones and auto_buy_drones_enabled
+		AutomationPriority.EFFICIENCY:
+			return has_auto_buy_efficiency and auto_buy_efficiency_enabled
+		AutomationPriority.CLICK:
+			return has_auto_buy_click and auto_buy_click_enabled
+		_:
+			return false
+
+func _is_category_limited(category: int) -> bool:
+	match category:
+		AutomationPriority.DRONES:
+			return max_drones_limit > 0 and drones_owned >= max_drones_limit
+		AutomationPriority.EFFICIENCY:
+			return max_efficiency_limit > 0 and efficiency_level >= max_efficiency_limit
+		AutomationPriority.CLICK:
+			return max_click_limit > 0 and click_level >= max_click_limit
+		_:
+			return true
+
+func _attempt_buy_category(category: int) -> bool:
+	match category:
+		AutomationPriority.DRONES:
+			return buy_drone()
+		AutomationPriority.EFFICIENCY:
+			return buy_efficiency_upgrade()
+		AutomationPriority.CLICK:
+			return buy_click_upgrade()
+		_:
+			return false
+
+func _get_priority_order() -> Array[int]:
+	match automation_priority:
+		AutomationPriority.EFFICIENCY:
+			return [AutomationPriority.EFFICIENCY, AutomationPriority.DRONES, AutomationPriority.CLICK]
+		AutomationPriority.CLICK:
+			return [AutomationPriority.CLICK, AutomationPriority.DRONES, AutomationPriority.EFFICIENCY]
+		_:
+			return [AutomationPriority.DRONES, AutomationPriority.EFFICIENCY, AutomationPriority.CLICK]
 
 func update_automation(delta: float) -> void:
 	_automation_elapsed += delta
@@ -170,9 +295,27 @@ func update_automation(delta: float) -> void:
 		if has_auto_overclock and auto_overclock_enabled and can_activate_overclock():
 			activate_overclock()
 
-		if has_auto_buy_drones and auto_buy_drones_enabled:
-			for _i in range(3):
-				if not buy_drone():
+		if not has_auto_priority_controller:
+			if has_auto_buy_drones and auto_buy_drones_enabled:
+				for _i in range(3):
+					if not buy_drone():
+						break
+		else:
+			var purchases_made: int = 0
+			var priority_order: Array[int] = _get_priority_order()
+			while purchases_made < 5:
+				var purchased_this_pass: bool = false
+				for category in priority_order:
+					if not _is_category_enabled(category):
+						continue
+					if _is_category_limited(category):
+						continue
+					if _attempt_buy_category(category):
+						purchases_made += 1
+						purchased_this_pass = true
+						if purchases_made >= 5:
+							break
+				if not purchased_this_pass:
 					break
 
 	if _automation_elapsed >= 0.25:
@@ -192,6 +335,15 @@ func save_game() -> void:
 		"auto_overclock_enabled": auto_overclock_enabled,
 		"has_auto_buy_drones": has_auto_buy_drones,
 		"auto_buy_drones_enabled": auto_buy_drones_enabled,
+		"has_auto_buy_efficiency": has_auto_buy_efficiency,
+		"auto_buy_efficiency_enabled": auto_buy_efficiency_enabled,
+		"has_auto_buy_click": has_auto_buy_click,
+		"auto_buy_click_enabled": auto_buy_click_enabled,
+		"has_auto_priority_controller": has_auto_priority_controller,
+		"automation_priority": automation_priority,
+		"max_drones_limit": max_drones_limit,
+		"max_efficiency_limit": max_efficiency_limit,
+		"max_click_limit": max_click_limit,
 		"last_save_unix": last_save_unix,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -231,6 +383,16 @@ func load_game() -> void:
 	auto_overclock_enabled = bool(data.get("auto_overclock_enabled", false))
 	has_auto_buy_drones = bool(data.get("has_auto_buy_drones", false))
 	auto_buy_drones_enabled = bool(data.get("auto_buy_drones_enabled", false))
+	has_auto_buy_efficiency = bool(data.get("has_auto_buy_efficiency", false))
+	auto_buy_efficiency_enabled = bool(data.get("auto_buy_efficiency_enabled", false))
+	has_auto_buy_click = bool(data.get("has_auto_buy_click", false))
+	auto_buy_click_enabled = bool(data.get("auto_buy_click_enabled", false))
+	has_auto_priority_controller = bool(data.get("has_auto_priority_controller", false))
+	automation_priority = int(data.get("automation_priority", AutomationPriority.DRONES))
+	automation_priority = int(clamp(automation_priority, AutomationPriority.DRONES, AutomationPriority.CLICK))
+	max_drones_limit = int(max(0, int(data.get("max_drones_limit", 0))))
+	max_efficiency_limit = int(max(0, int(data.get("max_efficiency_limit", 0))))
+	max_click_limit = int(max(0, int(data.get("max_click_limit", 0))))
 	if overclock_time_left <= 0.0:
 		overclock_time_left = 0.0
 		overclock_active = false

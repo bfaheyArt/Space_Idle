@@ -7,13 +7,31 @@ extends Control
 @onready var overclock_button: Button = $VBox/OverclockPanel/OverclockButton
 @onready var overclock_label: Label = $VBox/OverclockPanel/OverclockLabel
 @onready var feedback_label: Label = $VBox/FeedbackLabel
-@onready var buy_drone_button: Button = $VBox/ShopPanel/ShopVBox/BuyDroneButton
-@onready var efficiency_button: Button = $VBox/ShopPanel/ShopVBox/EfficiencyButton
-@onready var click_power_button: Button = $VBox/ShopPanel/ShopVBox/ClickPowerButton
-@onready var buy_auto_overclock_button: Button = $VBox/ShopPanel/ShopVBox/BuyAutoOverclockButton
-@onready var auto_overclock_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoOverclockToggle
-@onready var buy_auto_buy_drones_button: Button = $VBox/ShopPanel/ShopVBox/BuyAutoBuyDronesButton
-@onready var auto_buy_drones_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoBuyDronesToggle
+@onready var open_shop_button: Button = $VBox/OpenShopButton
+@onready var shop_popup: PanelContainer = $ShopPopup
+@onready var close_shop_button: Button = $ShopPopup/ShopRoot/ShopHeader/CloseShopButton
+@onready var automation_note_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutomationNoteLabel
+@onready var buy_drone_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyDroneButton
+@onready var efficiency_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/EfficiencyButton
+@onready var click_power_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/ClickPowerButton
+@onready var buy_auto_overclock_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyAutoOverclockButton
+@onready var auto_overclock_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoOverclockToggle
+@onready var buy_auto_buy_drones_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyAutoBuyDronesButton
+@onready var auto_buy_drones_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyDronesToggle
+@onready var buy_auto_buy_efficiency_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyEfficiencyPurchaseButton
+@onready var auto_buy_efficiency_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyEfficiencyToggle
+@onready var buy_auto_buy_click_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyClickPurchaseButton
+@onready var auto_buy_click_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyClickToggle
+@onready var auto_priority_purchase_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoPriorityPurchaseButton
+@onready var priority_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/PriorityLabel
+@onready var priority_option: OptionButton = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/PriorityOption
+@onready var limits_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/LimitsLabel
+@onready var max_drones_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine
+@onready var max_drones_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine/MaxDronesSpin
+@onready var max_efficiency_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine
+@onready var max_efficiency_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine/MaxEfficiencySpin
+@onready var max_click_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine
+@onready var max_click_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine/MaxClickSpin
 
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
@@ -31,7 +49,18 @@ func _ready() -> void:
 	auto_overclock_toggle.toggled.connect(_on_auto_overclock_toggled)
 	buy_auto_buy_drones_button.pressed.connect(_on_buy_auto_buy_drones_pressed)
 	auto_buy_drones_toggle.toggled.connect(_on_auto_buy_drones_toggled)
+	buy_auto_buy_efficiency_button.pressed.connect(_on_buy_auto_buy_efficiency_pressed)
+	auto_buy_efficiency_toggle.toggled.connect(_on_auto_buy_efficiency_toggled)
+	buy_auto_buy_click_button.pressed.connect(_on_buy_auto_buy_click_pressed)
+	auto_buy_click_toggle.toggled.connect(_on_auto_buy_click_toggled)
+	auto_priority_purchase_button.pressed.connect(_on_buy_auto_priority_controller_pressed)
+	priority_option.item_selected.connect(_on_priority_selected)
+	max_drones_spin.value_changed.connect(_on_max_drones_changed)
+	max_efficiency_spin.value_changed.connect(_on_max_efficiency_changed)
+	max_click_spin.value_changed.connect(_on_max_click_changed)
 	feedback_label.text = ""
+	open_shop_button.pressed.connect(_on_open_shop_pressed)
+	close_shop_button.pressed.connect(_on_close_shop_pressed)
 	refresh_ui()
 
 func _process(delta: float) -> void:
@@ -67,6 +96,9 @@ func refresh_ui() -> void:
 	var click_cost: float = Economy.get_click_cost(GameState.click_level)
 	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
 	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
+	var auto_buy_eff_cost: float = Economy.get_auto_buy_eff_cost(GameState.has_auto_buy_efficiency)
+	var auto_buy_click_cost: float = Economy.get_auto_buy_click_cost(GameState.has_auto_buy_click)
+	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
 
 	ore_label.text = "Ore: %.1f" % GameState.ore
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
@@ -104,6 +136,68 @@ func refresh_ui() -> void:
 		auto_buy_drones_toggle.visible = false
 		auto_buy_drones_toggle.disabled = true
 		auto_buy_drones_toggle.set_pressed_no_signal(false)
+
+	if GameState.has_auto_buy_efficiency:
+		buy_auto_buy_efficiency_button.text = "Auto-Buy Efficiency Purchased"
+		buy_auto_buy_efficiency_button.disabled = true
+		auto_buy_efficiency_toggle.visible = true
+		auto_buy_efficiency_toggle.disabled = false
+		auto_buy_efficiency_toggle.set_pressed_no_signal(GameState.auto_buy_efficiency_enabled)
+	else:
+		buy_auto_buy_efficiency_button.text = "Buy Auto-Buy Efficiency (%.1f)" % auto_buy_eff_cost
+		buy_auto_buy_efficiency_button.disabled = not GameState.can_afford(auto_buy_eff_cost)
+		auto_buy_efficiency_toggle.visible = false
+		auto_buy_efficiency_toggle.disabled = true
+		auto_buy_efficiency_toggle.set_pressed_no_signal(false)
+
+	if GameState.has_auto_buy_click:
+		buy_auto_buy_click_button.text = "Auto-Buy Click Power Purchased"
+		buy_auto_buy_click_button.disabled = true
+		auto_buy_click_toggle.visible = true
+		auto_buy_click_toggle.disabled = false
+		auto_buy_click_toggle.set_pressed_no_signal(GameState.auto_buy_click_enabled)
+	else:
+		buy_auto_buy_click_button.text = "Buy Auto-Buy Click Power (%.1f)" % auto_buy_click_cost
+		buy_auto_buy_click_button.disabled = not GameState.can_afford(auto_buy_click_cost)
+		auto_buy_click_toggle.visible = false
+		auto_buy_click_toggle.disabled = true
+		auto_buy_click_toggle.set_pressed_no_signal(false)
+
+	automation_note_label.visible = (GameState.has_auto_buy_efficiency or GameState.has_auto_buy_click) and not GameState.has_auto_priority_controller
+
+	if GameState.has_auto_priority_controller:
+		auto_priority_purchase_button.text = "Auto-Priority Controller Purchased"
+		auto_priority_purchase_button.disabled = true
+		priority_label.visible = true
+		priority_option.visible = true
+		priority_option.disabled = false
+		priority_option.select(GameState.automation_priority)
+		limits_label.visible = true
+		max_drones_line.visible = true
+		max_efficiency_line.visible = true
+		max_click_line.visible = true
+		max_drones_spin.editable = true
+		max_efficiency_spin.editable = true
+		max_click_spin.editable = true
+		max_drones_spin.set_value_no_signal(float(GameState.max_drones_limit))
+		max_efficiency_spin.set_value_no_signal(float(GameState.max_efficiency_limit))
+		max_click_spin.set_value_no_signal(float(GameState.max_click_limit))
+	else:
+		auto_priority_purchase_button.text = "Buy Auto-Priority Controller (%.1f)" % auto_priority_cost
+		auto_priority_purchase_button.disabled = not GameState.can_afford(auto_priority_cost)
+		priority_label.visible = false
+		priority_option.visible = false
+		priority_option.disabled = true
+		limits_label.visible = false
+		max_drones_line.visible = false
+		max_efficiency_line.visible = false
+		max_click_line.visible = false
+		max_drones_spin.editable = false
+		max_efficiency_spin.editable = false
+		max_click_spin.editable = false
+		max_drones_spin.set_value_no_signal(0.0)
+		max_efficiency_spin.set_value_no_signal(0.0)
+		max_click_spin.set_value_no_signal(0.0)
 
 	refresh_overclock_ui()
 
@@ -148,6 +242,33 @@ func _on_buy_auto_buy_drones_pressed() -> void:
 func _on_auto_buy_drones_toggled(value: bool) -> void:
 	GameState.set_auto_buy_drones_enabled(value)
 
+func _on_buy_auto_buy_efficiency_pressed() -> void:
+	GameState.buy_auto_buy_efficiency()
+
+func _on_auto_buy_efficiency_toggled(value: bool) -> void:
+	GameState.set_auto_buy_efficiency_enabled(value)
+
+func _on_buy_auto_buy_click_pressed() -> void:
+	GameState.buy_auto_buy_click()
+
+func _on_auto_buy_click_toggled(value: bool) -> void:
+	GameState.set_auto_buy_click_enabled(value)
+
+func _on_buy_auto_priority_controller_pressed() -> void:
+	GameState.buy_auto_priority_controller()
+
+func _on_priority_selected(index: int) -> void:
+	GameState.set_automation_priority(index)
+
+func _on_max_drones_changed(value: float) -> void:
+	GameState.set_max_drones_limit(int(value))
+
+func _on_max_efficiency_changed(value: float) -> void:
+	GameState.set_max_efficiency_limit(int(value))
+
+func _on_max_click_changed(value: float) -> void:
+	GameState.set_max_click_limit(int(value))
+
 func show_feedback(gain: float) -> void:
 	feedback_serial += 1
 	var this_serial: int = feedback_serial
@@ -155,3 +276,16 @@ func show_feedback(gain: float) -> void:
 	await get_tree().create_timer(0.5).timeout
 	if this_serial == feedback_serial:
 		feedback_label.text = ""
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and shop_popup.visible:
+		shop_popup.visible = false
+		get_viewport().set_input_as_handled()
+
+func _on_open_shop_pressed() -> void:
+	shop_popup.visible = true
+	refresh_ui()
+
+func _on_close_shop_pressed() -> void:
+	shop_popup.visible = false
