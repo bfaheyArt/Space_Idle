@@ -13,14 +13,19 @@ var last_save_unix: int = 0
 const SAVE_PATH := "user://save.json"
 const MAX_OFFLINE_SECONDS := 8 * 60 * 60
 
+func _get_economy() -> Node:
+	return get_node("/root/Economy")
+
 func _ready() -> void:
 	load_game()
 
 func get_ore_per_sec() -> float:
-	return Economy.get_ore_per_sec(drones_owned, efficiency_level)
+	var economy = _get_economy()
+	return economy.get_ore_per_sec(drones_owned, efficiency_level)
 
 func get_click_gain() -> float:
-	return Economy.get_click_gain(click_level)
+	var economy = _get_economy()
+	return economy.get_click_gain(click_level)
 
 func add_ore(amount: float) -> void:
 	if amount <= 0.0:
@@ -39,7 +44,8 @@ func spend(cost: float) -> bool:
 	return true
 
 func buy_drone() -> bool:
-	var cost: float = Economy.get_drone_cost(drones_owned)
+	var economy = _get_economy()
+	var cost: float = economy.get_drone_cost(drones_owned)
 	if not spend(cost):
 		return false
 	drones_owned += 1
@@ -47,7 +53,8 @@ func buy_drone() -> bool:
 	return true
 
 func buy_efficiency_upgrade() -> bool:
-	var cost: float = Economy.get_efficiency_cost(efficiency_level)
+	var economy = _get_economy()
+	var cost: float = economy.get_efficiency_cost(efficiency_level)
 	if not spend(cost):
 		return false
 	efficiency_level += 1
@@ -55,7 +62,8 @@ func buy_efficiency_upgrade() -> bool:
 	return true
 
 func buy_click_upgrade() -> bool:
-	var cost: float = Economy.get_click_cost(click_level)
+	var economy = _get_economy()
+	var cost: float = economy.get_click_cost(click_level)
 	if not spend(cost):
 		return false
 	click_level += 1
