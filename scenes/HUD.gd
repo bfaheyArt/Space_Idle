@@ -12,6 +12,7 @@ extends Control
 @onready var click_power_button: Button = $VBox/ShopPanel/ShopVBox/ClickPowerButton
 
 var autosave_elapsed: float = 0.0
+var overclock_ui_elapsed: float = 0.0
 var feedback_serial: int = 0
 
 func _ready() -> void:
@@ -27,8 +28,16 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	GameState.update_overclock(delta)
-	refresh_overclock_ui()
 	GameState.add_ore(GameState.get_ore_per_sec() * delta)
+
+	if GameState.overclock_active:
+		overclock_ui_elapsed += delta
+		if overclock_ui_elapsed >= 0.1:
+			overclock_ui_elapsed = 0.0
+			refresh_overclock_ui()
+	else:
+		overclock_ui_elapsed = 0.0
+
 	autosave_elapsed += delta
 	if autosave_elapsed >= 30.0:
 		autosave_elapsed = 0.0
