@@ -105,6 +105,33 @@ func get_mineral_amount(id: String) -> float:
 func get_all_minerals() -> Dictionary:
 	return minerals.duplicate()
 
+func can_sell_mineral(id: String, amount: float) -> bool:
+	return get_mineral_amount(id) >= amount and amount > 0.0
+
+func sell_mineral(id: String, amount: float) -> float:
+	var economy = _get_economy()
+	if economy.get_mineral_def(id).is_empty():
+		return 0.0
+	var available: float = get_mineral_amount(id)
+	var sell_amount: float = min(amount, available)
+	if sell_amount <= 0.0:
+		return 0.0
+	var price: float = economy.get_sell_price_per_unit(id)
+	var earned: float = sell_amount * price
+	add_mineral(id, -sell_amount)
+	add_cash(earned)
+	return earned
+
+func sell_all_of_mineral(id: String) -> float:
+	return sell_mineral(id, get_mineral_amount(id))
+
+func sell_all_minerals() -> float:
+	var economy = _get_economy()
+	var total_earned: float = 0.0
+	for id in economy.get_mineral_ids():
+		total_earned += sell_all_of_mineral(String(id))
+	return total_earned
+
 func clear_minerals() -> void:
 	minerals.clear()
 	emit_signal("minerals_changed")
