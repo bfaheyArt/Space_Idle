@@ -40,6 +40,8 @@ extends Control
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
 var feedback_serial: int = 0
+var _materials_rebuild_pending: bool = false
+var _materials_rebuild_cooldown: float = 0.0
 
 func _ready() -> void:
 	GameState.ore_changed.connect(_on_game_state_changed)
@@ -83,6 +85,16 @@ func _process(delta: float) -> void:
 			refresh_overclock_ui()
 	else:
 		overclock_ui_elapsed = 0.0
+
+	if shop_popup.visible:
+		_materials_rebuild_cooldown = max(_materials_rebuild_cooldown - delta, 0.0)
+		if _materials_rebuild_pending and _materials_rebuild_cooldown <= 0.0:
+			_materials_rebuild_pending = false
+			_materials_rebuild_cooldown = 0.2
+			rebuild_materials_list()
+	else:
+		_materials_rebuild_pending = false
+		_materials_rebuild_cooldown = 0.0
 
 	autosave_elapsed += delta
 	if autosave_elapsed >= 30.0:
@@ -213,7 +225,6 @@ func refresh_ui() -> void:
 		max_efficiency_spin.set_value_no_signal(0.0)
 		max_click_spin.set_value_no_signal(0.0)
 
-	rebuild_materials_list()
 	var has_materials: bool = false
 	for id in Economy.get_mineral_ids():
 		if GameState.get_mineral_amount(id) > 0.0:
@@ -280,6 +291,8 @@ func refresh_overclock_ui() -> void:
 
 func _on_game_state_changed(_value: Variant = null) -> void:
 	refresh_ui()
+	if shop_popup.visible:
+		_materials_rebuild_pending = true
 
 func _on_mine_pressed() -> void:
 	var gain: float = GameState.get_click_gain()
@@ -372,6 +385,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_open_shop_pressed() -> void:
 	shop_popup.visible = true
+	_materials_rebuild_pending = true
+	_materials_rebuild_cooldown = 0.0
 	refresh_ui()
 
 func _on_close_shop_pressed() -> void:
