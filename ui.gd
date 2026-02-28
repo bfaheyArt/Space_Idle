@@ -2,8 +2,8 @@
 extends Control
 
 # Get references to the labels (use % syntax for unique names within the scene)
-@onready var mineral_label: Label = $MarginContainer/VBoxContainer/MineralLabel
-@onready var mps_label: Label = $MarginContainer/VBoxContainer/MPSLabel
+@onready var mineral_label: Label = $mainUI/VBoxContainer/MineralLabel
+@onready var mps_label: Label = $mainUI/VBoxContainer/MPSLabel
 
 func _process(delta: float) -> void:
 	# Update the labels frequentlys
