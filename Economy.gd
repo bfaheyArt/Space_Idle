@@ -50,6 +50,9 @@ func get_mineral_base_price(id: String) -> float:
 	return float(mineral_def.get("base_price", 0.0))
 
 func get_sell_price_per_unit(id: String) -> float:
+	var market: Node = get_node_or_null("/root/Market")
+	if market != null:
+		return market.get_sell_price_per_unit(id)
 	return get_mineral_base_price(id)
 
 func get_mineral_rarity(id: String) -> int:

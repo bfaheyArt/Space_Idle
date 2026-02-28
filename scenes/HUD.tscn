@@ -460,6 +460,10 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Materials"
 
+[node name="MarketRefreshLabel" type="Label" parent="MarketPopup/PopupRoot/ContentMargin/Scroll/VBox"]
+layout_mode = 2
+text = "Next refresh: --:--"
+
 [node name="SellAllMaterialsButton" type="Button" parent="MarketPopup/PopupRoot/ContentMargin/Scroll/VBox"]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
