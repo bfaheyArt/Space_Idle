@@ -2,6 +2,8 @@ extends Node
 
 signal ore_changed(new_ore: float)
 signal stats_changed()
+signal drones_changed(new_count: int)
+signal mined(amount: float)
 
 var ore: float = 0.0
 var drones_owned: int = 0
@@ -33,6 +35,11 @@ func add_ore(amount: float) -> void:
 	ore += amount
 	emit_signal("ore_changed", ore)
 
+func manual_mine() -> void:
+	var gain: float = get_click_gain()
+	add_ore(gain)
+	emit_signal("mined", gain)
+
 func can_afford(cost: float) -> bool:
 	return ore >= cost
 
@@ -49,6 +56,7 @@ func buy_drone() -> bool:
 	if not spend(cost):
 		return false
 	drones_owned += 1
+	emit_signal("drones_changed", drones_owned)
 	emit_signal("stats_changed")
 	return true
 
