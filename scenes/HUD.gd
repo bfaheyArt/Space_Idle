@@ -10,6 +10,10 @@ extends Control
 @onready var buy_drone_button: Button = $VBox/ShopPanel/ShopVBox/BuyDroneButton
 @onready var efficiency_button: Button = $VBox/ShopPanel/ShopVBox/EfficiencyButton
 @onready var click_power_button: Button = $VBox/ShopPanel/ShopVBox/ClickPowerButton
+@onready var buy_auto_overclock_button: Button = $VBox/ShopPanel/ShopVBox/BuyAutoOverclockButton
+@onready var auto_overclock_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoOverclockToggle
+@onready var buy_auto_buy_drones_button: Button = $VBox/ShopPanel/ShopVBox/BuyAutoBuyDronesButton
+@onready var auto_buy_drones_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoBuyDronesToggle
 
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
@@ -23,11 +27,16 @@ func _ready() -> void:
 	buy_drone_button.pressed.connect(_on_buy_drone_pressed)
 	efficiency_button.pressed.connect(_on_efficiency_pressed)
 	click_power_button.pressed.connect(_on_click_power_pressed)
+	buy_auto_overclock_button.pressed.connect(_on_buy_auto_overclock_pressed)
+	auto_overclock_toggle.toggled.connect(_on_auto_overclock_toggled)
+	buy_auto_buy_drones_button.pressed.connect(_on_buy_auto_buy_drones_pressed)
+	auto_buy_drones_toggle.toggled.connect(_on_auto_buy_drones_toggled)
 	feedback_label.text = ""
 	refresh_ui()
 
 func _process(delta: float) -> void:
 	GameState.update_overclock(delta)
+	GameState.update_automation(delta)
 	GameState.add_ore(GameState.get_ore_per_sec() * delta)
 
 	if GameState.overclock_active:
@@ -56,6 +65,8 @@ func refresh_ui() -> void:
 	var drone_cost: float = Economy.get_drone_cost(GameState.drones_owned)
 	var efficiency_cost: float = Economy.get_efficiency_cost(GameState.efficiency_level)
 	var click_cost: float = Economy.get_click_cost(GameState.click_level)
+	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
+	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
 
 	ore_label.text = "Ore: %.1f" % GameState.ore
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
@@ -67,6 +78,32 @@ func refresh_ui() -> void:
 	buy_drone_button.disabled = not GameState.can_afford(drone_cost)
 	efficiency_button.disabled = not GameState.can_afford(efficiency_cost)
 	click_power_button.disabled = not GameState.can_afford(click_cost)
+
+	if GameState.has_auto_overclock:
+		buy_auto_overclock_button.text = "Auto Overclock Purchased"
+		buy_auto_overclock_button.disabled = true
+		auto_overclock_toggle.visible = true
+		auto_overclock_toggle.disabled = false
+		auto_overclock_toggle.set_pressed_no_signal(GameState.auto_overclock_enabled)
+	else:
+		buy_auto_overclock_button.text = "Buy Auto Overclock (%.1f)" % auto_overclock_cost
+		buy_auto_overclock_button.disabled = not GameState.can_afford(auto_overclock_cost)
+		auto_overclock_toggle.visible = false
+		auto_overclock_toggle.disabled = true
+		auto_overclock_toggle.set_pressed_no_signal(false)
+
+	if GameState.has_auto_buy_drones:
+		buy_auto_buy_drones_button.text = "Auto-Buy Drones Purchased"
+		buy_auto_buy_drones_button.disabled = true
+		auto_buy_drones_toggle.visible = true
+		auto_buy_drones_toggle.disabled = false
+		auto_buy_drones_toggle.set_pressed_no_signal(GameState.auto_buy_drones_enabled)
+	else:
+		buy_auto_buy_drones_button.text = "Buy Auto-Buy Drones (%.1f)" % auto_buy_drones_cost
+		buy_auto_buy_drones_button.disabled = not GameState.can_afford(auto_buy_drones_cost)
+		auto_buy_drones_toggle.visible = false
+		auto_buy_drones_toggle.disabled = true
+		auto_buy_drones_toggle.set_pressed_no_signal(false)
 
 	refresh_overclock_ui()
 
@@ -98,6 +135,18 @@ func _on_efficiency_pressed() -> void:
 
 func _on_click_power_pressed() -> void:
 	GameState.buy_click_upgrade()
+
+func _on_buy_auto_overclock_pressed() -> void:
+	GameState.buy_auto_overclock()
+
+func _on_auto_overclock_toggled(value: bool) -> void:
+	GameState.set_auto_overclock_enabled(value)
+
+func _on_buy_auto_buy_drones_pressed() -> void:
+	GameState.buy_auto_buy_drones()
+
+func _on_auto_buy_drones_toggled(value: bool) -> void:
+	GameState.set_auto_buy_drones_enabled(value)
 
 func show_feedback(gain: float) -> void:
 	feedback_serial += 1
