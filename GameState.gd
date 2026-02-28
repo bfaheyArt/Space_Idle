@@ -112,6 +112,8 @@ func clear_minerals() -> void:
 func manual_mine() -> void:
 	var gain: float = get_click_gain()
 	add_ore(gain)
+	var mineral_id := Economy.roll_basic_mineral(_mining_rng)
+	add_mineral(mineral_id, 1.0)
 	if not overclock_active:
 		overclock_charge = clamp(overclock_charge + CHARGE_PER_CLICK, 0.0, OVERCLOCK_MAX_CHARGE)
 		emit_signal("stats_changed")
