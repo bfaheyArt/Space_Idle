@@ -97,10 +97,13 @@ func _process(delta: float) -> void:
 	GameState.update_mineral_mining(delta)
 	GameState.add_ore(GameState.get_ore_per_sec() * delta)
 
-	_market_countdown_update_elapsed += delta
-	if _market_countdown_update_elapsed >= 0.25:
+	if market_popup.visible:
+		_market_countdown_update_elapsed += delta
+		if _market_countdown_update_elapsed >= 0.25:
+			_market_countdown_update_elapsed = 0.0
+			_update_market_refresh_label()
+	else:
 		_market_countdown_update_elapsed = 0.0
-		_update_market_refresh_label()
 
 	if GameState.overclock_active:
 		overclock_ui_elapsed += delta

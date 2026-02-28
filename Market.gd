@@ -17,8 +17,15 @@ func ensure_initialized() -> void:
 		base_seed = int(Time.get_unix_time_from_system())
 	if next_refresh_unix <= 0:
 		next_refresh_unix = int(Time.get_unix_time_from_system())
-	if multipliers.is_empty():
-		refresh_once()
+
+func set_debug_seed(seed: int) -> void:
+	if not OS.is_debug_build():
+		return
+	base_seed = seed
+	refresh_index = 0
+	multipliers = {}
+	next_refresh_unix = int(Time.get_unix_time_from_system())
+	emit_signal("market_updated")
 
 func get_sell_price_per_unit(id: String) -> float:
 	var economy: Node = get_node_or_null("/root/Economy")
@@ -42,7 +49,7 @@ func update_market(now_unix: int) -> void:
 		refresh_until(now_unix)
 
 func refresh_once() -> void:
-	ensure_initialized_seed_only()
+	ensure_initialized()
 	var scheduled_refresh_unix: int = next_refresh_unix
 	if scheduled_refresh_unix <= 0:
 		scheduled_refresh_unix = int(Time.get_unix_time_from_system())
@@ -70,14 +77,12 @@ func refresh_until(now_unix: int) -> void:
 	while now_unix >= next_refresh_unix and loops < MAX_CATCH_UP_LOOPS:
 		refresh_once()
 		loops += 1
+	if now_unix >= next_refresh_unix:
+		next_refresh_unix = now_unix + REFRESH_MAX_SECONDS
 
 func debug_force_refresh() -> void:
 	next_refresh_unix = int(Time.get_unix_time_from_system())
 	update_market(next_refresh_unix)
-
-func ensure_initialized_seed_only() -> void:
-	if base_seed == 0:
-		base_seed = int(Time.get_unix_time_from_system())
 
 func _get_multiplier_range_for_rarity(rarity: int) -> Vector2:
 	match rarity:
