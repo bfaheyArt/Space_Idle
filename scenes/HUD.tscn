@@ -110,6 +110,17 @@ text = "Upgrade Efficiency Lv.0 (50.0)"
 layout_mode = 2
 text = "Upgrade Click Power Lv.0 (25.0)"
 
+[node name="MaterialsLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+layout_mode = 2
+text = "Materials"
+
+[node name="SellAllMaterialsButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+layout_mode = 2
+text = "Sell All Materials"
+
+[node name="MaterialsList" type="VBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+layout_mode = 2
+
 [node name="AutomationLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Automation"
