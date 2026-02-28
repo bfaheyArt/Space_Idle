@@ -149,11 +149,10 @@ func refresh_ui() -> void:
 
 	ore_label.text = "Ore: %.1f" % GameState.ore
 	cash_label.text = "Cash: %.1f" % GameState.cash
-	mineral_label.text = "Iron: %.1f | Copper: %.1f | Tin: %.1f" % [
-		GameState.get_mineral_amount("iron"),
-		GameState.get_mineral_amount("copper"),
-		GameState.get_mineral_amount("tin")
-	]
+	var parts: Array[String] = []
+	for id: String in Economy.get_mineral_ids():
+		parts.append("%s: %.1f" % [Economy.get_mineral_name(id), GameState.get_mineral_amount(id)])
+	mineral_label.text = " | ".join(parts)
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
 	_update_market_refresh_label()
 	mine_button.text = "MINE (+%.1f)" % click_gain
