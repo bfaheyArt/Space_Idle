@@ -40,6 +40,8 @@ extends Control
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
 var feedback_serial: int = 0
+var _materials_rebuild_pending: bool = false
+var _materials_rebuild_cooldown: float = 0.0
 
 func _ready() -> void:
 	GameState.ore_changed.connect(_on_game_state_changed)
@@ -83,6 +85,16 @@ func _process(delta: float) -> void:
 			refresh_overclock_ui()
 	else:
 		overclock_ui_elapsed = 0.0
+
+	if shop_popup.visible:
+		_materials_rebuild_cooldown = max(_materials_rebuild_cooldown - delta, 0.0)
+		if _materials_rebuild_pending and _materials_rebuild_cooldown <= 0.0:
+			_materials_rebuild_pending = false
+			_materials_rebuild_cooldown = 0.2
+			rebuild_materials_list()
+	else:
+		_materials_rebuild_pending = false
+		_materials_rebuild_cooldown = 0.0
 
 	autosave_elapsed += delta
 	if autosave_elapsed >= 30.0:
@@ -213,7 +225,6 @@ func refresh_ui() -> void:
 		max_efficiency_spin.set_value_no_signal(0.0)
 		max_click_spin.set_value_no_signal(0.0)
 
-	rebuild_materials_list()
 	var has_materials: bool = false
 	for id in Economy.get_mineral_ids():
 		if GameState.get_mineral_amount(id) > 0.0:
@@ -257,14 +268,12 @@ func rebuild_materials_list() -> void:
 
 		var sell10_btn: Button = Button.new()
 		sell10_btn.text = "Sell 10"
-		sell10_btn.set_meta("mineral_id", id)
-		sell10_btn.pressed.connect(_on_sell10_pressed)
+		sell10_btn.pressed.connect(_on_sell10_pressed.bind(id))
 		row.add_child(sell10_btn)
 
 		var sell_all_btn: Button = Button.new()
 		sell_all_btn.text = "Sell All"
-		sell_all_btn.set_meta("mineral_id", id)
-		sell_all_btn.pressed.connect(_on_sellall_pressed)
+		sell_all_btn.pressed.connect(_on_sellall_pressed.bind(id))
 		row.add_child(sell_all_btn)
 
 		materials_list.add_child(row)
@@ -280,6 +289,8 @@ func refresh_overclock_ui() -> void:
 
 func _on_game_state_changed(_value: Variant = null) -> void:
 	refresh_ui()
+	if shop_popup.visible:
+		_materials_rebuild_pending = true
 
 func _on_mine_pressed() -> void:
 	var gain: float = GameState.get_click_gain()
@@ -337,20 +348,10 @@ func _on_max_efficiency_changed(value: float) -> void:
 func _on_max_click_changed(value: float) -> void:
 	GameState.set_max_click_limit(int(value))
 
-func _on_sell10_pressed() -> void:
-	var sender_id: int = get_signal_sender_id()
-	var sender: Object = instance_from_id(sender_id)
-	if sender == null or not sender.has_meta("mineral_id"):
-		return
-	var id: String = str(sender.get_meta("mineral_id"))
+func _on_sell10_pressed(id: String) -> void:
 	GameState.sell_mineral(id, 10.0)
 
-func _on_sellall_pressed() -> void:
-	var sender_id: int = get_signal_sender_id()
-	var sender: Object = instance_from_id(sender_id)
-	if sender == null or not sender.has_meta("mineral_id"):
-		return
-	var id: String = str(sender.get_meta("mineral_id"))
+func _on_sellall_pressed(id: String) -> void:
 	GameState.sell_all_of_mineral(id)
 
 func _on_sell_all_materials_pressed() -> void:
@@ -372,6 +373,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_open_shop_pressed() -> void:
 	shop_popup.visible = true
+	rebuild_materials_list()
+	_materials_rebuild_pending = false
+	_materials_rebuild_cooldown = 0.2
 	refresh_ui()
 
 func _on_close_shop_pressed() -> void:
