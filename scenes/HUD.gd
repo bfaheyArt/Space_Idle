@@ -42,6 +42,7 @@ var feedback_serial: int = 0
 func _ready() -> void:
 	GameState.ore_changed.connect(_on_game_state_changed)
 	GameState.cash_changed.connect(_on_game_state_changed)
+	GameState.minerals_changed.connect(_on_game_state_changed)
 	GameState.stats_changed.connect(_on_game_state_changed)
 	mine_button.pressed.connect(_on_mine_pressed)
 	overclock_button.pressed.connect(_on_overclock_pressed)

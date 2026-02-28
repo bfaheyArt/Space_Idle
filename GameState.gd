@@ -112,7 +112,7 @@ func clear_minerals() -> void:
 func manual_mine() -> void:
 	var gain: float = get_click_gain()
 	add_ore(gain)
-	var mineral_id := Economy.roll_basic_mineral(_mining_rng)
+	var mineral_id: String = Economy.roll_basic_mineral(_mining_rng)
 	add_mineral(mineral_id, 1.0)
 	if not overclock_active:
 		overclock_charge = clamp(overclock_charge + CHARGE_PER_CLICK, 0.0, OVERCLOCK_MAX_CHARGE)
@@ -149,7 +149,7 @@ func update_mineral_mining(delta: float) -> void:
 	mining_roll_accumulator += get_mining_rolls_per_sec() * delta
 	while mining_roll_accumulator >= 1.0:
 		mining_roll_accumulator -= 1.0
-		var mineral_id := _get_economy().roll_basic_mineral(_mining_rng)
+		var mineral_id: String = _get_economy().roll_basic_mineral(_mining_rng)
 		add_mineral(mineral_id, 1.0)
 
 func can_afford(cost: float) -> bool:
