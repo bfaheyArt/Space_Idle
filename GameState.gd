@@ -31,6 +31,8 @@ var max_drones_limit: int = 0
 var max_efficiency_limit: int = 0
 var max_click_limit: int = 0
 var _automation_elapsed: float = 0.0
+var mining_roll_accumulator: float = 0.0
+var _mining_rng := RandomNumberGenerator.new()
 var last_save_unix: int = 0
 
 const SAVE_PATH := "user://save.json"
@@ -44,10 +46,16 @@ func _get_economy() -> Node:
 	return get_node("/root/Economy")
 
 func _ready() -> void:
+	_mining_rng.randomize()
 	load_game()
 
 func get_ore_per_sec() -> float:
 	return get_base_ore_per_sec() * get_overclock_multiplier()
+
+func get_mining_rolls_per_sec() -> float:
+	var economy = _get_economy()
+	var base_rolls_per_sec: float = economy.get_base_mining_rolls_per_sec(drones_owned, efficiency_level)
+	return base_rolls_per_sec * get_overclock_multiplier()
 
 func get_base_ore_per_sec() -> float:
 	var economy = _get_economy()
@@ -134,6 +142,13 @@ func update_overclock(delta: float) -> void:
 		overclock_active = false
 		overclock_time_left = 0.0
 		emit_signal("stats_changed")
+
+func update_mineral_mining(delta: float) -> void:
+	mining_roll_accumulator += get_mining_rolls_per_sec() * delta
+	while mining_roll_accumulator >= 1.0:
+		mining_roll_accumulator -= 1.0
+		var mineral_id := _get_economy().roll_basic_mineral(_mining_rng)
+		add_mineral(mineral_id, 1.0)
 
 func can_afford(cost: float) -> bool:
 	return ore >= cost
