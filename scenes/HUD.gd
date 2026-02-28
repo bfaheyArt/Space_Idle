@@ -1,47 +1,49 @@
 extends Control
 
-@onready var ore_label: Label = $VBox/OreLabel
-@onready var cash_label: Label = $VBox/CashLabel
-@onready var mineral_label: Label = $VBox/MineralLabel
-@onready var rate_label: Label = $VBox/RateLabel
-@onready var mine_button: Button = $VBox/MineButton
-@onready var overclock_bar: ProgressBar = $VBox/OverclockPanel/OverclockBar
-@onready var overclock_button: Button = $VBox/OverclockPanel/OverclockButton
-@onready var overclock_label: Label = $VBox/OverclockPanel/OverclockLabel
+@onready var ore_label: Label = $VBox/StatsPanel/StatsVBox/OreLabel
+@onready var cash_label: Label = $VBox/StatsPanel/StatsVBox/CashLabel
+@onready var mineral_label: Label = $VBox/StatsPanel/StatsVBox/MineralLabel
+@onready var rate_label: Label = $VBox/StatsPanel/StatsVBox/RateLabel
+@onready var mine_button: Button = $VBox/MineRow/MineButton
+@onready var overclock_bar: ProgressBar = $VBox/OverclockPanel/OverclockVBox/OverclockBar
+@onready var overclock_button: Button = $VBox/OverclockPanel/OverclockVBox/OverclockButton
+@onready var overclock_label: Label = $VBox/OverclockPanel/OverclockVBox/OverclockLabel
 @onready var feedback_label: Label = $VBox/FeedbackLabel
-@onready var open_upgrades_button: Button = $VBox/OpenUpgradesButton
-@onready var open_automation_button: Button = $VBox/OpenAutomationButton
-@onready var open_market_button: Button = $VBox/OpenMarketButton
+@onready var open_upgrades_button: Button = $VBox/MenuButtonsRow/OpenUpgradesButton
+@onready var open_automation_button: Button = $VBox/MenuButtonsRow/OpenAutomationButton
+@onready var open_market_button: Button = $VBox/MenuButtonsRow/OpenMarketButton
 @onready var upgrades_popup: PanelContainer = $UpgradesPopup
 @onready var close_upgrades_button: Button = $UpgradesPopup/PopupRoot/Header/CloseButton
 @onready var automation_popup: PanelContainer = $AutomationPopup
 @onready var close_automation_button: Button = $AutomationPopup/PopupRoot/Header/CloseButton
 @onready var market_popup: PanelContainer = $MarketPopup
 @onready var close_market_button: Button = $MarketPopup/PopupRoot/Header/CloseButton
-@onready var buy_drone_button: Button = $UpgradesPopup/PopupRoot/Scroll/VBox/BuyDroneButton
-@onready var efficiency_button: Button = $UpgradesPopup/PopupRoot/Scroll/VBox/EfficiencyButton
-@onready var click_power_button: Button = $UpgradesPopup/PopupRoot/Scroll/VBox/ClickPowerButton
-@onready var automation_note_label: Label = $AutomationPopup/PopupRoot/Scroll/VBox/AutomationNoteLabel
-@onready var buy_auto_overclock_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/BuyAutoOverclockButton
-@onready var auto_overclock_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoOverclockToggle
-@onready var buy_auto_buy_drones_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/BuyAutoBuyDronesButton
-@onready var auto_buy_drones_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyDronesToggle
-@onready var buy_auto_buy_efficiency_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyEfficiencyPurchaseButton
-@onready var auto_buy_efficiency_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyEfficiencyToggle
-@onready var buy_auto_buy_click_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyClickPurchaseButton
-@onready var auto_buy_click_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyClickToggle
-@onready var auto_priority_purchase_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/AutoPriorityPurchaseButton
-@onready var priority_label: Label = $AutomationPopup/PopupRoot/Scroll/VBox/PriorityLabel
-@onready var priority_option: OptionButton = $AutomationPopup/PopupRoot/Scroll/VBox/PriorityOption
-@onready var limits_label: Label = $AutomationPopup/PopupRoot/Scroll/VBox/LimitsLabel
-@onready var max_drones_line: HBoxContainer = $AutomationPopup/PopupRoot/Scroll/VBox/MaxDronesLine
-@onready var max_drones_spin: SpinBox = $AutomationPopup/PopupRoot/Scroll/VBox/MaxDronesLine/MaxDronesSpin
-@onready var max_efficiency_line: HBoxContainer = $AutomationPopup/PopupRoot/Scroll/VBox/MaxEfficiencyLine
-@onready var max_efficiency_spin: SpinBox = $AutomationPopup/PopupRoot/Scroll/VBox/MaxEfficiencyLine/MaxEfficiencySpin
-@onready var max_click_line: HBoxContainer = $AutomationPopup/PopupRoot/Scroll/VBox/MaxClickLine
-@onready var max_click_spin: SpinBox = $AutomationPopup/PopupRoot/Scroll/VBox/MaxClickLine/MaxClickSpin
-@onready var sell_all_materials_button: Button = $MarketPopup/PopupRoot/Scroll/VBox/SellAllMaterialsButton
-@onready var materials_list: VBoxContainer = $MarketPopup/PopupRoot/Scroll/VBox/MaterialsList
+@onready var buy_drone_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyDroneButton
+@onready var efficiency_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/EfficiencyButton
+@onready var click_power_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/ClickPowerButton
+@onready var automation_note_label: Label = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutomationNoteLabel
+@onready var buy_auto_overclock_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyAutoOverclockButton
+@onready var auto_overclock_toggle: CheckBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoOverclockToggleIndent/AutoOverclockToggleRow/AutoOverclockToggle
+@onready var buy_auto_buy_drones_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyAutoBuyDronesButton
+@onready var auto_buy_drones_toggle: CheckBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoBuyDronesToggleIndent/AutoBuyDronesToggleRow/AutoBuyDronesToggle
+@onready var buy_auto_buy_efficiency_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyAutoEfficiencyPurchaseButton
+@onready var auto_buy_efficiency_toggle: CheckBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoBuyEfficiencyToggleIndent/AutoBuyEfficiencyToggleRow/AutoBuyEfficiencyToggle
+@onready var buy_auto_buy_click_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyAutoClickPurchaseButton
+@onready var auto_buy_click_toggle: CheckBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoBuyClickToggleIndent/AutoBuyClickToggleRow/AutoBuyClickToggle
+@onready var auto_priority_purchase_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoPriorityPurchaseButton
+@onready var priority_line: HBoxContainer = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/PriorityLine
+@onready var priority_label: Label = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/PriorityLine/PriorityLabel
+@onready var priority_option: OptionButton = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/PriorityLine/PriorityOption
+@onready var limits_label: Label = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/LimitsLabel
+@onready var limits_hint_label: Label = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/LimitsHintLabel
+@onready var max_drones_line: HBoxContainer = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxDronesLine
+@onready var max_drones_spin: SpinBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxDronesLine/MaxDronesSpin
+@onready var max_efficiency_line: HBoxContainer = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxEfficiencyLine
+@onready var max_efficiency_spin: SpinBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxEfficiencyLine/MaxEfficiencySpin
+@onready var max_click_line: HBoxContainer = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxClickLine
+@onready var max_click_spin: SpinBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxClickLine/MaxClickSpin
+@onready var sell_all_materials_button: Button = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/SellAllMaterialsButton
+@onready var materials_list: VBoxContainer = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/MaterialsList
 
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
@@ -204,11 +206,13 @@ func refresh_ui() -> void:
 	if GameState.has_auto_priority_controller:
 		auto_priority_purchase_button.text = "Auto-Priority Controller Purchased"
 		auto_priority_purchase_button.disabled = true
+		priority_line.visible = true
 		priority_label.visible = true
 		priority_option.visible = true
 		priority_option.disabled = false
 		priority_option.select(GameState.automation_priority)
 		limits_label.visible = true
+		limits_hint_label.visible = true
 		max_drones_line.visible = true
 		max_efficiency_line.visible = true
 		max_click_line.visible = true
@@ -221,10 +225,12 @@ func refresh_ui() -> void:
 	else:
 		auto_priority_purchase_button.text = "Buy Auto-Priority Controller (%.1f)" % auto_priority_cost
 		auto_priority_purchase_button.disabled = not GameState.can_afford(auto_priority_cost)
+		priority_line.visible = false
 		priority_label.visible = false
 		priority_option.visible = false
 		priority_option.disabled = true
 		limits_label.visible = false
+		limits_hint_label.visible = false
 		max_drones_line.visible = false
 		max_efficiency_line.visible = false
 		max_click_line.visible = false
@@ -248,6 +254,35 @@ func rebuild_materials_list() -> void:
 	for child in materials_list.get_children():
 		child.queue_free()
 
+	var header_row: HBoxContainer = HBoxContainer.new()
+	header_row.add_theme_constant_override("separation", 8)
+
+	var material_header: Label = Label.new()
+	material_header.text = "Material"
+	material_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_row.add_child(material_header)
+
+	var amount_header: Label = Label.new()
+	amount_header.text = "Amount"
+	amount_header.custom_minimum_size.x = 90
+	amount_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	header_row.add_child(amount_header)
+
+	var price_header: Label = Label.new()
+	price_header.text = "Price"
+	price_header.custom_minimum_size.x = 90
+	price_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	header_row.add_child(price_header)
+
+	var action_spacer: Control = Control.new()
+	action_spacer.custom_minimum_size.x = 168
+	header_row.add_child(action_spacer)
+
+	materials_list.add_child(header_row)
+
+	var divider: HSeparator = HSeparator.new()
+	materials_list.add_child(divider)
+
 	var mineral_ids: Array[String] = Economy.get_mineral_ids()
 	mineral_ids.sort_custom(func(a: String, b: String) -> bool:
 		var rarity_a: int = Economy.get_mineral_rarity(a)
@@ -263,26 +298,34 @@ func rebuild_materials_list() -> void:
 			continue
 
 		var row: HBoxContainer = HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
 
 		var name_label: Label = Label.new()
 		name_label.text = Economy.get_mineral_name(id)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(name_label)
 
 		var amount_label: Label = Label.new()
-		amount_label.text = "Amount: %.1f" % amount
+		amount_label.text = "%.1f" % amount
+		amount_label.custom_minimum_size.x = 90
+		amount_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(amount_label)
 
 		var price_label: Label = Label.new()
-		price_label.text = "Price: %.1f/u" % Economy.get_sell_price_per_unit(id)
+		price_label.text = "%.1f/u" % Economy.get_sell_price_per_unit(id)
+		price_label.custom_minimum_size.x = 90
+		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(price_label)
 
 		var sell10_btn: Button = Button.new()
 		sell10_btn.text = "Sell 10"
+		sell10_btn.custom_minimum_size.x = 80
 		sell10_btn.pressed.connect(_on_sell10_pressed.bind(id))
 		row.add_child(sell10_btn)
 
 		var sell_all_btn: Button = Button.new()
 		sell_all_btn.text = "Sell All"
+		sell_all_btn.custom_minimum_size.x = 80
 		sell_all_btn.pressed.connect(_on_sellall_pressed.bind(id))
 		row.add_child(sell_all_btn)
 
