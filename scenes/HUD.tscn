@@ -140,7 +140,7 @@ text = "Enable Auto-Buy Click Power"
 
 [node name="AutomationNoteLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
-text = "Note: Efficiency/Click auto-buy requires Auto-Priority Controller."
+text = "Note: Auto-Priority Controller unlocks priority and max limits for automation."
 autowrap_mode = 2
 
 [node name="AutoPriorityPurchaseButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
