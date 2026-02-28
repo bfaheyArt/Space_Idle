@@ -9,33 +9,39 @@ extends Control
 @onready var overclock_button: Button = $VBox/OverclockPanel/OverclockButton
 @onready var overclock_label: Label = $VBox/OverclockPanel/OverclockLabel
 @onready var feedback_label: Label = $VBox/FeedbackLabel
-@onready var open_shop_button: Button = $VBox/OpenShopButton
-@onready var shop_popup: PanelContainer = $ShopPopup
-@onready var close_shop_button: Button = $ShopPopup/ShopRoot/ShopHeader/CloseShopButton
-@onready var automation_note_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutomationNoteLabel
-@onready var buy_drone_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyDroneButton
-@onready var efficiency_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/EfficiencyButton
-@onready var click_power_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/ClickPowerButton
-@onready var buy_auto_overclock_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyAutoOverclockButton
-@onready var auto_overclock_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoOverclockToggle
-@onready var buy_auto_buy_drones_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyAutoBuyDronesButton
-@onready var auto_buy_drones_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyDronesToggle
-@onready var buy_auto_buy_efficiency_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyEfficiencyPurchaseButton
-@onready var auto_buy_efficiency_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyEfficiencyToggle
-@onready var buy_auto_buy_click_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyClickPurchaseButton
-@onready var auto_buy_click_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyClickToggle
-@onready var auto_priority_purchase_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoPriorityPurchaseButton
-@onready var priority_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/PriorityLabel
-@onready var priority_option: OptionButton = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/PriorityOption
-@onready var limits_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/LimitsLabel
-@onready var max_drones_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine
-@onready var max_drones_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine/MaxDronesSpin
-@onready var max_efficiency_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine
-@onready var max_efficiency_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine/MaxEfficiencySpin
-@onready var max_click_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine
-@onready var max_click_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine/MaxClickSpin
-@onready var materials_list: VBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaterialsList
-@onready var sell_all_materials_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/SellAllMaterialsButton
+@onready var open_upgrades_button: Button = $VBox/OpenUpgradesButton
+@onready var open_automation_button: Button = $VBox/OpenAutomationButton
+@onready var open_market_button: Button = $VBox/OpenMarketButton
+@onready var upgrades_popup: PanelContainer = $UpgradesPopup
+@onready var close_upgrades_button: Button = $UpgradesPopup/PopupRoot/Header/CloseButton
+@onready var automation_popup: PanelContainer = $AutomationPopup
+@onready var close_automation_button: Button = $AutomationPopup/PopupRoot/Header/CloseButton
+@onready var market_popup: PanelContainer = $MarketPopup
+@onready var close_market_button: Button = $MarketPopup/PopupRoot/Header/CloseButton
+@onready var buy_drone_button: Button = $UpgradesPopup/PopupRoot/Scroll/VBox/BuyDroneButton
+@onready var efficiency_button: Button = $UpgradesPopup/PopupRoot/Scroll/VBox/EfficiencyButton
+@onready var click_power_button: Button = $UpgradesPopup/PopupRoot/Scroll/VBox/ClickPowerButton
+@onready var automation_note_label: Label = $AutomationPopup/PopupRoot/Scroll/VBox/AutomationNoteLabel
+@onready var buy_auto_overclock_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/BuyAutoOverclockButton
+@onready var auto_overclock_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoOverclockToggle
+@onready var buy_auto_buy_drones_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/BuyAutoBuyDronesButton
+@onready var auto_buy_drones_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyDronesToggle
+@onready var buy_auto_buy_efficiency_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyEfficiencyPurchaseButton
+@onready var auto_buy_efficiency_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyEfficiencyToggle
+@onready var buy_auto_buy_click_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyClickPurchaseButton
+@onready var auto_buy_click_toggle: CheckBox = $AutomationPopup/PopupRoot/Scroll/VBox/AutoBuyClickToggle
+@onready var auto_priority_purchase_button: Button = $AutomationPopup/PopupRoot/Scroll/VBox/AutoPriorityPurchaseButton
+@onready var priority_label: Label = $AutomationPopup/PopupRoot/Scroll/VBox/PriorityLabel
+@onready var priority_option: OptionButton = $AutomationPopup/PopupRoot/Scroll/VBox/PriorityOption
+@onready var limits_label: Label = $AutomationPopup/PopupRoot/Scroll/VBox/LimitsLabel
+@onready var max_drones_line: HBoxContainer = $AutomationPopup/PopupRoot/Scroll/VBox/MaxDronesLine
+@onready var max_drones_spin: SpinBox = $AutomationPopup/PopupRoot/Scroll/VBox/MaxDronesLine/MaxDronesSpin
+@onready var max_efficiency_line: HBoxContainer = $AutomationPopup/PopupRoot/Scroll/VBox/MaxEfficiencyLine
+@onready var max_efficiency_spin: SpinBox = $AutomationPopup/PopupRoot/Scroll/VBox/MaxEfficiencyLine/MaxEfficiencySpin
+@onready var max_click_line: HBoxContainer = $AutomationPopup/PopupRoot/Scroll/VBox/MaxClickLine
+@onready var max_click_spin: SpinBox = $AutomationPopup/PopupRoot/Scroll/VBox/MaxClickLine/MaxClickSpin
+@onready var sell_all_materials_button: Button = $MarketPopup/PopupRoot/Scroll/VBox/SellAllMaterialsButton
+@onready var materials_list: VBoxContainer = $MarketPopup/PopupRoot/Scroll/VBox/MaterialsList
 
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
@@ -67,8 +73,12 @@ func _ready() -> void:
 	max_efficiency_spin.value_changed.connect(_on_max_efficiency_changed)
 	max_click_spin.value_changed.connect(_on_max_click_changed)
 	feedback_label.text = ""
-	open_shop_button.pressed.connect(_on_open_shop_pressed)
-	close_shop_button.pressed.connect(_on_close_shop_pressed)
+	open_upgrades_button.pressed.connect(_on_open_upgrades_pressed)
+	close_upgrades_button.pressed.connect(_on_close_upgrades_pressed)
+	open_automation_button.pressed.connect(_on_open_automation_pressed)
+	close_automation_button.pressed.connect(_on_close_automation_pressed)
+	open_market_button.pressed.connect(_on_open_market_pressed)
+	close_market_button.pressed.connect(_on_close_market_pressed)
 	sell_all_materials_button.pressed.connect(_on_sell_all_materials_pressed)
 	refresh_ui()
 
@@ -86,7 +96,7 @@ func _process(delta: float) -> void:
 	else:
 		overclock_ui_elapsed = 0.0
 
-	if shop_popup.visible:
+	if market_popup.visible:
 		_materials_rebuild_cooldown = max(_materials_rebuild_cooldown - delta, 0.0)
 		if _materials_rebuild_pending and _materials_rebuild_cooldown <= 0.0:
 			_materials_rebuild_pending = false
@@ -289,7 +299,7 @@ func refresh_overclock_ui() -> void:
 
 func _on_game_state_changed(_value: Variant = null) -> void:
 	refresh_ui()
-	if shop_popup.visible:
+	if market_popup.visible:
 		_materials_rebuild_pending = true
 
 func _on_mine_pressed() -> void:
@@ -367,16 +377,38 @@ func show_feedback(gain: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel") and shop_popup.visible:
-		shop_popup.visible = false
+	if event.is_action_pressed("ui_cancel") and (upgrades_popup.visible or automation_popup.visible or market_popup.visible):
+		close_all_popups()
 		get_viewport().set_input_as_handled()
 
-func _on_open_shop_pressed() -> void:
-	shop_popup.visible = true
+func close_all_popups() -> void:
+	upgrades_popup.visible = false
+	automation_popup.visible = false
+	market_popup.visible = false
+
+func _on_open_upgrades_pressed() -> void:
+	close_all_popups()
+	upgrades_popup.visible = true
+	refresh_ui()
+
+func _on_close_upgrades_pressed() -> void:
+	upgrades_popup.visible = false
+
+func _on_open_automation_pressed() -> void:
+	close_all_popups()
+	automation_popup.visible = true
+	refresh_ui()
+
+func _on_close_automation_pressed() -> void:
+	automation_popup.visible = false
+
+func _on_open_market_pressed() -> void:
+	close_all_popups()
+	market_popup.visible = true
 	rebuild_materials_list()
 	_materials_rebuild_pending = false
 	_materials_rebuild_cooldown = 0.2
 	refresh_ui()
 
-func _on_close_shop_pressed() -> void:
-	shop_popup.visible = false
+func _on_close_market_pressed() -> void:
+	market_popup.visible = false
