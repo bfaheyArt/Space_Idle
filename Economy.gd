@@ -127,6 +127,8 @@ func roll_mineral_from_table(
 	var total_weight: float = 0.0
 	for entry in weighted_entries:
 		total_weight += float(entry["weight"])
+	if total_weight <= 0.0:
+		return "iron"
 
 	var roll: float = rng.randf() * total_weight
 	var cumulative: float = 0.0
