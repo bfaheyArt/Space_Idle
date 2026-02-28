@@ -51,70 +51,107 @@ text = ""
 layout_mode = 2
 text = ""
 
-[node name="ShopPanel" type="PanelContainer" parent="VBox"]
+[node name="OpenShopButton" type="Button" parent="VBox"]
+layout_mode = 2
+text = "SHOP"
+
+[node name="ShopPopup" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -376.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 536.0
+
+[node name="ShopRoot" type="VBoxContainer" parent="ShopPopup"]
 layout_mode = 2
 
-[node name="ShopVBox" type="VBoxContainer" parent="VBox/ShopPanel"]
+[node name="ShopHeader" type="HBoxContainer" parent="ShopPopup/ShopRoot"]
 layout_mode = 2
 
-[node name="BuyDroneButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="ShopTitle" type="Label" parent="ShopPopup/ShopRoot/ShopHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Shop"
+
+[node name="CloseShopButton" type="Button" parent="ShopPopup/ShopRoot/ShopHeader"]
+layout_mode = 2
+text = "X"
+
+[node name="ShopScroll" type="ScrollContainer" parent="ShopPopup/ShopRoot"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ShopVBox" type="VBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BuyDroneButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Buy Drone (10.0)"
 
-[node name="EfficiencyButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="EfficiencyButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Upgrade Efficiency Lv.0 (50.0)"
 
-[node name="ClickPowerButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="ClickPowerButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Upgrade Click Power Lv.0 (25.0)"
 
-[node name="AutomationLabel" type="Label" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutomationLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Automation"
 
-[node name="BuyAutoOverclockButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="BuyAutoOverclockButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Buy Auto Overclock"
 
-[node name="AutoOverclockToggle" type="CheckBox" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutoOverclockToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Enable Auto Overclock"
 
-[node name="BuyAutoBuyDronesButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="BuyAutoBuyDronesButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Buy Auto-Buy Drones"
 
-[node name="AutoBuyDronesToggle" type="CheckBox" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutoBuyDronesToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Enable Auto-Buy Drones"
 
-
-[node name="AutoBuyEfficiencyPurchaseButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutoBuyEfficiencyPurchaseButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Buy Auto-Buy Efficiency"
 
-[node name="AutoBuyEfficiencyToggle" type="CheckBox" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutoBuyEfficiencyToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Enable Auto-Buy Efficiency"
 
-[node name="AutoBuyClickPurchaseButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutoBuyClickPurchaseButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Buy Auto-Buy Click Power"
 
-[node name="AutoBuyClickToggle" type="CheckBox" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutoBuyClickToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Enable Auto-Buy Click Power"
 
-[node name="AutoPriorityPurchaseButton" type="Button" parent="VBox/ShopPanel/ShopVBox"]
+[node name="AutomationNoteLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+layout_mode = 2
+text = "Note: Efficiency/Click auto-buy requires Auto-Priority Controller."
+autowrap_mode = 2
+
+[node name="AutoPriorityPurchaseButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Buy Auto-Priority Controller"
 
-[node name="PriorityLabel" type="Label" parent="VBox/ShopPanel/ShopVBox"]
+[node name="PriorityLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Spend Priority"
 
-[node name="PriorityOption" type="OptionButton" parent="VBox/ShopPanel/ShopVBox"]
+[node name="PriorityOption" type="OptionButton" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 item_count = 3
 selected = 0
@@ -125,44 +162,44 @@ popup/item_1/id = 1
 popup/item_2/text = "Click"
 popup/item_2/id = 2
 
-[node name="LimitsLabel" type="Label" parent="VBox/ShopPanel/ShopVBox"]
+[node name="LimitsLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 text = "Automation Limits"
 
-[node name="MaxDronesLine" type="HBoxContainer" parent="VBox/ShopPanel/ShopVBox"]
+[node name="MaxDronesLine" type="HBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 
-[node name="MaxDronesLabel" type="Label" parent="VBox/ShopPanel/ShopVBox/MaxDronesLine"]
+[node name="MaxDronesLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine"]
 layout_mode = 2
 text = "Max Drones (0=∞)"
 
-[node name="MaxDronesSpin" type="SpinBox" parent="VBox/ShopPanel/ShopVBox/MaxDronesLine"]
+[node name="MaxDronesSpin" type="SpinBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine"]
 layout_mode = 2
 min_value = 0.0
 max_value = 9999.0
 step = 1.0
 
-[node name="MaxEfficiencyLine" type="HBoxContainer" parent="VBox/ShopPanel/ShopVBox"]
+[node name="MaxEfficiencyLine" type="HBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 
-[node name="MaxEfficiencyLabel" type="Label" parent="VBox/ShopPanel/ShopVBox/MaxEfficiencyLine"]
+[node name="MaxEfficiencyLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine"]
 layout_mode = 2
 text = "Max Efficiency (0=∞)"
 
-[node name="MaxEfficiencySpin" type="SpinBox" parent="VBox/ShopPanel/ShopVBox/MaxEfficiencyLine"]
+[node name="MaxEfficiencySpin" type="SpinBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine"]
 layout_mode = 2
 min_value = 0.0
 max_value = 999.0
 step = 1.0
 
-[node name="MaxClickLine" type="HBoxContainer" parent="VBox/ShopPanel/ShopVBox"]
+[node name="MaxClickLine" type="HBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
 layout_mode = 2
 
-[node name="MaxClickLabel" type="Label" parent="VBox/ShopPanel/ShopVBox/MaxClickLine"]
+[node name="MaxClickLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine"]
 layout_mode = 2
 text = "Max Click (0=∞)"
 
-[node name="MaxClickSpin" type="SpinBox" parent="VBox/ShopPanel/ShopVBox/MaxClickLine"]
+[node name="MaxClickSpin" type="SpinBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine"]
 layout_mode = 2
 min_value = 0.0
 max_value = 999.0

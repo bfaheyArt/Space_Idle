@@ -7,27 +7,31 @@ extends Control
 @onready var overclock_button: Button = $VBox/OverclockPanel/OverclockButton
 @onready var overclock_label: Label = $VBox/OverclockPanel/OverclockLabel
 @onready var feedback_label: Label = $VBox/FeedbackLabel
-@onready var buy_drone_button: Button = $VBox/ShopPanel/ShopVBox/BuyDroneButton
-@onready var efficiency_button: Button = $VBox/ShopPanel/ShopVBox/EfficiencyButton
-@onready var click_power_button: Button = $VBox/ShopPanel/ShopVBox/ClickPowerButton
-@onready var buy_auto_overclock_button: Button = $VBox/ShopPanel/ShopVBox/BuyAutoOverclockButton
-@onready var auto_overclock_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoOverclockToggle
-@onready var buy_auto_buy_drones_button: Button = $VBox/ShopPanel/ShopVBox/BuyAutoBuyDronesButton
-@onready var auto_buy_drones_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoBuyDronesToggle
-@onready var buy_auto_buy_efficiency_button: Button = $VBox/ShopPanel/ShopVBox/AutoBuyEfficiencyPurchaseButton
-@onready var auto_buy_efficiency_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoBuyEfficiencyToggle
-@onready var buy_auto_buy_click_button: Button = $VBox/ShopPanel/ShopVBox/AutoBuyClickPurchaseButton
-@onready var auto_buy_click_toggle: CheckBox = $VBox/ShopPanel/ShopVBox/AutoBuyClickToggle
-@onready var auto_priority_purchase_button: Button = $VBox/ShopPanel/ShopVBox/AutoPriorityPurchaseButton
-@onready var priority_label: Label = $VBox/ShopPanel/ShopVBox/PriorityLabel
-@onready var priority_option: OptionButton = $VBox/ShopPanel/ShopVBox/PriorityOption
-@onready var limits_label: Label = $VBox/ShopPanel/ShopVBox/LimitsLabel
-@onready var max_drones_line: HBoxContainer = $VBox/ShopPanel/ShopVBox/MaxDronesLine
-@onready var max_drones_spin: SpinBox = $VBox/ShopPanel/ShopVBox/MaxDronesLine/MaxDronesSpin
-@onready var max_efficiency_line: HBoxContainer = $VBox/ShopPanel/ShopVBox/MaxEfficiencyLine
-@onready var max_efficiency_spin: SpinBox = $VBox/ShopPanel/ShopVBox/MaxEfficiencyLine/MaxEfficiencySpin
-@onready var max_click_line: HBoxContainer = $VBox/ShopPanel/ShopVBox/MaxClickLine
-@onready var max_click_spin: SpinBox = $VBox/ShopPanel/ShopVBox/MaxClickLine/MaxClickSpin
+@onready var open_shop_button: Button = $VBox/OpenShopButton
+@onready var shop_popup: PanelContainer = $ShopPopup
+@onready var close_shop_button: Button = $ShopPopup/ShopRoot/ShopHeader/CloseShopButton
+@onready var automation_note_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutomationNoteLabel
+@onready var buy_drone_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyDroneButton
+@onready var efficiency_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/EfficiencyButton
+@onready var click_power_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/ClickPowerButton
+@onready var buy_auto_overclock_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyAutoOverclockButton
+@onready var auto_overclock_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoOverclockToggle
+@onready var buy_auto_buy_drones_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/BuyAutoBuyDronesButton
+@onready var auto_buy_drones_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyDronesToggle
+@onready var buy_auto_buy_efficiency_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyEfficiencyPurchaseButton
+@onready var auto_buy_efficiency_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyEfficiencyToggle
+@onready var buy_auto_buy_click_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyClickPurchaseButton
+@onready var auto_buy_click_toggle: CheckBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoBuyClickToggle
+@onready var auto_priority_purchase_button: Button = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/AutoPriorityPurchaseButton
+@onready var priority_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/PriorityLabel
+@onready var priority_option: OptionButton = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/PriorityOption
+@onready var limits_label: Label = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/LimitsLabel
+@onready var max_drones_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine
+@onready var max_drones_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine/MaxDronesSpin
+@onready var max_efficiency_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine
+@onready var max_efficiency_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine/MaxEfficiencySpin
+@onready var max_click_line: HBoxContainer = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine
+@onready var max_click_spin: SpinBox = $ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine/MaxClickSpin
 
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
@@ -55,6 +59,8 @@ func _ready() -> void:
 	max_efficiency_spin.value_changed.connect(_on_max_efficiency_changed)
 	max_click_spin.value_changed.connect(_on_max_click_changed)
 	feedback_label.text = ""
+	open_shop_button.pressed.connect(_on_open_shop_pressed)
+	close_shop_button.pressed.connect(_on_close_shop_pressed)
 	refresh_ui()
 
 func _process(delta: float) -> void:
@@ -156,6 +162,8 @@ func refresh_ui() -> void:
 		auto_buy_click_toggle.visible = false
 		auto_buy_click_toggle.disabled = true
 		auto_buy_click_toggle.set_pressed_no_signal(false)
+
+	automation_note_label.visible = (GameState.has_auto_buy_efficiency or GameState.has_auto_buy_click) and not GameState.has_auto_priority_controller
 
 	if GameState.has_auto_priority_controller:
 		auto_priority_purchase_button.text = "Auto-Priority Controller Purchased"
@@ -268,3 +276,16 @@ func show_feedback(gain: float) -> void:
 	await get_tree().create_timer(0.5).timeout
 	if this_serial == feedback_serial:
 		feedback_label.text = ""
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and shop_popup.visible:
+		shop_popup.visible = false
+		get_viewport().set_input_as_handled()
+
+func _on_open_shop_pressed() -> void:
+	shop_popup.visible = true
+	refresh_ui()
+
+func _on_close_shop_pressed() -> void:
+	shop_popup.visible = false
