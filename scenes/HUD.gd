@@ -31,6 +31,9 @@ func _process(delta: float) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		GameState.save_game()
+		get_tree().quit()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		GameState.save_game()
 
 func refresh_ui() -> void:
 	var ore_per_sec: float = GameState.get_ore_per_sec()
@@ -57,19 +60,15 @@ func _on_mine_pressed() -> void:
 	var gain: float = GameState.get_click_gain()
 	GameState.add_ore(gain)
 	show_feedback(gain)
-	refresh_ui()
 
 func _on_buy_drone_pressed() -> void:
 	GameState.buy_drone()
-	refresh_ui()
 
 func _on_efficiency_pressed() -> void:
 	GameState.buy_efficiency_upgrade()
-	refresh_ui()
 
 func _on_click_power_pressed() -> void:
 	GameState.buy_click_upgrade()
-	refresh_ui()
 
 func show_feedback(gain: float) -> void:
 	feedback_serial += 1
