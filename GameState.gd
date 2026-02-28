@@ -12,6 +12,11 @@ var click_level: int = 0
 var overclock_charge: float = 0.0
 var overclock_active: bool = false
 var overclock_time_left: float = 0.0
+var has_auto_overclock: bool = false
+var auto_overclock_enabled: bool = false
+var has_auto_buy_drones: bool = false
+var auto_buy_drones_enabled: bool = false
+var _automation_elapsed: float = 0.0
 var last_save_unix: int = 0
 
 const SAVE_PATH := "user://save.json"
@@ -116,6 +121,63 @@ func buy_click_upgrade() -> bool:
 	emit_signal("stats_changed")
 	return true
 
+func buy_auto_overclock() -> bool:
+	if has_auto_overclock:
+		return false
+	var economy = _get_economy()
+	var cost: float = economy.get_auto_overclock_cost(false)
+	if not spend(cost):
+		return false
+	has_auto_overclock = true
+	auto_overclock_enabled = true
+	emit_signal("stats_changed")
+	return true
+
+func buy_auto_buy_drones() -> bool:
+	if has_auto_buy_drones:
+		return false
+	var economy = _get_economy()
+	var cost: float = economy.get_auto_buy_drones_cost(false)
+	if not spend(cost):
+		return false
+	has_auto_buy_drones = true
+	auto_buy_drones_enabled = true
+	emit_signal("stats_changed")
+	return true
+
+func set_auto_overclock_enabled(value: bool) -> void:
+	if not has_auto_overclock:
+		return
+	auto_overclock_enabled = value
+	emit_signal("stats_changed")
+
+func set_auto_buy_drones_enabled(value: bool) -> void:
+	if not has_auto_buy_drones:
+		return
+	auto_buy_drones_enabled = value
+	emit_signal("stats_changed")
+
+func update_automation(delta: float) -> void:
+	_automation_elapsed += delta
+	if _automation_elapsed < 0.25:
+		return
+
+	var iterations: int = 0
+	while _automation_elapsed >= 0.25 and iterations < 20:
+		_automation_elapsed -= 0.25
+		iterations += 1
+
+		if has_auto_overclock and auto_overclock_enabled and can_activate_overclock():
+			activate_overclock()
+
+		if has_auto_buy_drones and auto_buy_drones_enabled:
+			for _i in range(3):
+				if not buy_drone():
+					break
+
+	if _automation_elapsed >= 0.25:
+		_automation_elapsed = fmod(_automation_elapsed, 0.25)
+
 func save_game() -> void:
 	last_save_unix = Time.get_unix_time_from_system()
 	var save_data := {
@@ -126,6 +188,10 @@ func save_game() -> void:
 		"overclock_charge": overclock_charge,
 		"overclock_active": overclock_active,
 		"overclock_time_left": overclock_time_left,
+		"has_auto_overclock": has_auto_overclock,
+		"auto_overclock_enabled": auto_overclock_enabled,
+		"has_auto_buy_drones": has_auto_buy_drones,
+		"auto_buy_drones_enabled": auto_buy_drones_enabled,
 		"last_save_unix": last_save_unix,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -161,6 +227,10 @@ func load_game() -> void:
 	overclock_charge = float(data.get("overclock_charge", 0.0))
 	overclock_active = bool(data.get("overclock_active", false))
 	overclock_time_left = float(data.get("overclock_time_left", 0.0))
+	has_auto_overclock = bool(data.get("has_auto_overclock", false))
+	auto_overclock_enabled = bool(data.get("auto_overclock_enabled", false))
+	has_auto_buy_drones = bool(data.get("has_auto_buy_drones", false))
+	auto_buy_drones_enabled = bool(data.get("auto_buy_drones_enabled", false))
 	if overclock_time_left <= 0.0:
 		overclock_time_left = 0.0
 		overclock_active = false
