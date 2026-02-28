@@ -26,47 +26,53 @@ func _process(delta: float) -> void:
 func _on_drones_changed(_count: int) -> void:
 	rebuild_drones()
 
-
 func _drone_unit_noise(index: int, salt: int) -> float:
 	var n: int = index * 92821 + salt * 68917 + 1337
 	var mixed: int = abs(n % 10000)
 	return float(mixed) / 9999.0
 
+func _create_drone(index: int, count_hint: int) -> Node2D:
+	var drone := Node2D.new()
+	drone.name = "Drone%d" % index
+	drone.set_meta("drone_index", index)
+	drone.set_meta("orbit_angle", TAU * (float(index) / float(maxi(count_hint, 1))))
+	var radius_noise := _drone_unit_noise(index, 1)
+	var speed_noise := _drone_unit_noise(index, 2)
+	drone.set_meta("orbit_radius", DRONE_ORBIT_RADIUS + lerpf(-18.0, 18.0, radius_noise))
+	drone.set_meta("orbit_speed", DRONE_BASE_SPEED + lerpf(-0.15, 0.18, speed_noise))
+
+	var body := ColorRect.new()
+	body.name = "Body"
+	body.color = Color(0.58, 0.84, 0.98)
+	body.size = Vector2(10.0, 6.0)
+	body.position = Vector2(-5.0, -3.0)
+	drone.add_child(body)
+
+	var nose := Polygon2D.new()
+	nose.name = "Nose"
+	nose.color = Color(0.78, 0.94, 1.0)
+	nose.polygon = PackedVector2Array([
+		Vector2(5.0, -3.0),
+		Vector2(10.0, 0.0),
+		Vector2(5.0, 3.0),
+	])
+	drone.add_child(nose)
+	return drone
+
 func rebuild_drones() -> void:
-	for child in drones_root.get_children():
-		child.queue_free()
+	var target_count := mini(GameState.drones_owned, MAX_VISIBLE_DRONES)
+	var existing_count := drones_root.get_child_count()
 
-	var count := mini(GameState.drones_owned, MAX_VISIBLE_DRONES)
-	if count <= 0:
-		return
+	while existing_count > target_count:
+		drones_root.get_child(existing_count - 1).queue_free()
+		existing_count -= 1
 
-	for i in range(count):
-		var drone := Node2D.new()
-		drone.name = "Drone%d" % i
-		drone.set_meta("orbit_angle", TAU * (float(i) / float(count)))
-		var radius_noise := _drone_unit_noise(i, 1)
-		var speed_noise := _drone_unit_noise(i, 2)
-		drone.set_meta("orbit_radius", DRONE_ORBIT_RADIUS + lerpf(-18.0, 18.0, radius_noise))
-		drone.set_meta("orbit_speed", DRONE_BASE_SPEED + lerpf(-0.15, 0.18, speed_noise))
+	while existing_count < target_count:
+		var new_drone := _create_drone(existing_count, target_count)
+		drones_root.add_child(new_drone)
+		existing_count += 1
 
-		var body := ColorRect.new()
-		body.name = "Body"
-		body.color = Color(0.58, 0.84, 0.98)
-		body.size = Vector2(10.0, 6.0)
-		body.position = Vector2(-5.0, -3.0)
-		drone.add_child(body)
-
-		var nose := Polygon2D.new()
-		nose.name = "Nose"
-		nose.color = Color(0.78, 0.94, 1.0)
-		nose.polygon = PackedVector2Array([
-			Vector2(5.0, -3.0),
-			Vector2(10.0, 0.0),
-			Vector2(5.0, 3.0),
-		])
-		drone.add_child(nose)
-
-		drones_root.add_child(drone)
+	_update_drones(0.0)
 
 func _update_drones(delta: float) -> void:
 	for drone in drones_root.get_children():
