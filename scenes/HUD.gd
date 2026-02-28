@@ -1,0 +1,80 @@
+extends Control
+
+@onready var ore_label: Label = $VBox/OreLabel
+@onready var rate_label: Label = $VBox/RateLabel
+@onready var mine_button: Button = $VBox/MineButton
+@onready var feedback_label: Label = $VBox/FeedbackLabel
+@onready var buy_drone_button: Button = $VBox/ShopPanel/ShopVBox/BuyDroneButton
+@onready var efficiency_button: Button = $VBox/ShopPanel/ShopVBox/EfficiencyButton
+@onready var click_power_button: Button = $VBox/ShopPanel/ShopVBox/ClickPowerButton
+
+var autosave_elapsed: float = 0.0
+var feedback_serial: int = 0
+
+func _ready() -> void:
+	GameState.ore_changed.connect(_on_game_state_changed)
+	GameState.stats_changed.connect(_on_game_state_changed)
+	mine_button.pressed.connect(_on_mine_pressed)
+	buy_drone_button.pressed.connect(_on_buy_drone_pressed)
+	efficiency_button.pressed.connect(_on_efficiency_pressed)
+	click_power_button.pressed.connect(_on_click_power_pressed)
+	feedback_label.text = ""
+	refresh_ui()
+
+func _process(delta: float) -> void:
+	GameState.add_ore(GameState.get_ore_per_sec() * delta)
+	autosave_elapsed += delta
+	if autosave_elapsed >= 30.0:
+		autosave_elapsed = 0.0
+		GameState.save_game()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		GameState.save_game()
+
+func refresh_ui() -> void:
+	var ore_per_sec: float = GameState.get_ore_per_sec()
+	var click_gain: float = GameState.get_click_gain()
+	var drone_cost: float = Economy.get_drone_cost(GameState.drones_owned)
+	var efficiency_cost: float = Economy.get_efficiency_cost(GameState.efficiency_level)
+	var click_cost: float = Economy.get_click_cost(GameState.click_level)
+
+	ore_label.text = "Ore: %.1f" % GameState.ore
+	rate_label.text = "Rate: %.1f/s" % ore_per_sec
+	mine_button.text = "MINE (+%.1f)" % click_gain
+	buy_drone_button.text = "Buy Drone (%.1f)" % drone_cost
+	efficiency_button.text = "Upgrade Efficiency Lv.%d (%.1f)" % [GameState.efficiency_level, efficiency_cost]
+	click_power_button.text = "Upgrade Click Power Lv.%d (%.1f)" % [GameState.click_level, click_cost]
+
+	buy_drone_button.disabled = not GameState.can_afford(drone_cost)
+	efficiency_button.disabled = not GameState.can_afford(efficiency_cost)
+	click_power_button.disabled = not GameState.can_afford(click_cost)
+
+func _on_game_state_changed(_value: Variant = null) -> void:
+	refresh_ui()
+
+func _on_mine_pressed() -> void:
+	var gain: float = GameState.get_click_gain()
+	GameState.add_ore(gain)
+	show_feedback(gain)
+	refresh_ui()
+
+func _on_buy_drone_pressed() -> void:
+	GameState.buy_drone()
+	refresh_ui()
+
+func _on_efficiency_pressed() -> void:
+	GameState.buy_efficiency_upgrade()
+	refresh_ui()
+
+func _on_click_power_pressed() -> void:
+	GameState.buy_click_upgrade()
+	refresh_ui()
+
+func show_feedback(gain: float) -> void:
+	feedback_serial += 1
+	var this_serial: int = feedback_serial
+	feedback_label.text = "+%.1f ore" % gain
+	await get_tree().create_timer(0.5).timeout
+	if this_serial == feedback_serial:
+		feedback_label.text = ""
