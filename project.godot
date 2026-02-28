@@ -18,6 +18,8 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameManager="*res://GameManager.gd"
+Economy="*res://Economy.gd"
+GameState="*res://GameState.gd"
 
 [display]
 
