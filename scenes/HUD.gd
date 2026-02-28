@@ -351,16 +351,14 @@ func _on_max_click_changed(value: float) -> void:
 	GameState.set_max_click_limit(int(value))
 
 func _on_sell10_pressed() -> void:
-	var sender_id: int = get_signal_sender_id()
-	var sender: Object = instance_from_id(sender_id)
+	var sender: Node = get_signal_sender() as Node
 	if sender == null or not sender.has_meta("mineral_id"):
 		return
 	var id: String = str(sender.get_meta("mineral_id"))
 	GameState.sell_mineral(id, 10.0)
 
 func _on_sellall_pressed() -> void:
-	var sender_id: int = get_signal_sender_id()
-	var sender: Object = instance_from_id(sender_id)
+	var sender: Node = get_signal_sender() as Node
 	if sender == null or not sender.has_meta("mineral_id"):
 		return
 	var id: String = str(sender.get_meta("mineral_id"))
@@ -385,8 +383,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_open_shop_pressed() -> void:
 	shop_popup.visible = true
-	_materials_rebuild_pending = true
-	_materials_rebuild_cooldown = 0.0
+	rebuild_materials_list()
+	_materials_rebuild_pending = false
+	_materials_rebuild_cooldown = 0.2
 	refresh_ui()
 
 func _on_close_shop_pressed() -> void:
