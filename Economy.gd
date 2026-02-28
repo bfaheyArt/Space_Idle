@@ -49,6 +49,9 @@ func get_mineral_base_price(id: String) -> float:
 	var mineral_def: Dictionary = get_mineral_def(id)
 	return float(mineral_def.get("base_price", 0.0))
 
+func get_sell_price_per_unit(id: String) -> float:
+	return get_mineral_base_price(id)
+
 func get_mineral_rarity(id: String) -> int:
 	var mineral_def: Dictionary = get_mineral_def(id)
 	return int(mineral_def.get("rarity", -1))
