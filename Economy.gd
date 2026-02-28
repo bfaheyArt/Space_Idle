@@ -1,6 +1,7 @@
 extends Node
 
 const BASE_DRONE_RATE: float = 0.25
+const BASE_MINING_ROLLS_PER_SEC: float = 0.5
 const DRONE_BASE_COST: float = 10.0
 const DRONE_COST_GROWTH: float = 1.15
 const EFFICIENCY_BASE_COST: float = 50.0
@@ -64,6 +65,18 @@ func get_click_cost(level: int) -> float:
 func get_ore_per_sec(drones_owned: int, efficiency_level: int) -> float:
 	var efficiency_multiplier: float = pow(EFFICIENCY_MULTIPLIER_BASE, efficiency_level)
 	return BASE_DRONE_RATE * drones_owned * efficiency_multiplier
+
+func get_base_mining_rolls_per_sec(drones_owned: int, efficiency_level: int) -> float:
+	var efficiency_multiplier: float = pow(EFFICIENCY_MULTIPLIER_BASE, efficiency_level)
+	return BASE_MINING_ROLLS_PER_SEC * drones_owned * efficiency_multiplier
+
+func roll_basic_mineral(rng: RandomNumberGenerator) -> String:
+	var roll: float = rng.randf()
+	if roll < 0.80:
+		return "iron"
+	if roll < 0.95:
+		return "copper"
+	return "tin"
 
 func get_click_gain(click_level: int) -> float:
 	return CLICK_GAIN_BASE * pow(CLICK_GAIN_GROWTH, click_level)
