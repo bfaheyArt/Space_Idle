@@ -268,14 +268,12 @@ func rebuild_materials_list() -> void:
 
 		var sell10_btn: Button = Button.new()
 		sell10_btn.text = "Sell 10"
-		sell10_btn.set_meta("mineral_id", id)
-		sell10_btn.pressed.connect(_on_sell10_pressed)
+		sell10_btn.pressed.connect(_on_sell10_pressed.bind(id))
 		row.add_child(sell10_btn)
 
 		var sell_all_btn: Button = Button.new()
 		sell_all_btn.text = "Sell All"
-		sell_all_btn.set_meta("mineral_id", id)
-		sell_all_btn.pressed.connect(_on_sellall_pressed)
+		sell_all_btn.pressed.connect(_on_sellall_pressed.bind(id))
 		row.add_child(sell_all_btn)
 
 		materials_list.add_child(row)
@@ -350,18 +348,10 @@ func _on_max_efficiency_changed(value: float) -> void:
 func _on_max_click_changed(value: float) -> void:
 	GameState.set_max_click_limit(int(value))
 
-func _on_sell10_pressed() -> void:
-	var sender: Node = get_signal_sender() as Node
-	if sender == null or not sender.has_meta("mineral_id"):
-		return
-	var id: String = str(sender.get_meta("mineral_id"))
+func _on_sell10_pressed(id: String) -> void:
 	GameState.sell_mineral(id, 10.0)
 
-func _on_sellall_pressed() -> void:
-	var sender: Node = get_signal_sender() as Node
-	if sender == null or not sender.has_meta("mineral_id"):
-		return
-	var id: String = str(sender.get_meta("mineral_id"))
+func _on_sellall_pressed(id: String) -> void:
 	GameState.sell_all_of_mineral(id)
 
 func _on_sell_all_materials_pressed() -> void:
