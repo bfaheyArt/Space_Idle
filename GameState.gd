@@ -47,6 +47,7 @@ func _get_economy() -> Node:
 
 func _ready() -> void:
 	_mining_rng.randomize()
+	Market.ensure_initialized()
 	load_game()
 
 func get_ore_per_sec() -> float:
@@ -408,6 +409,7 @@ func update_automation(delta: float) -> void:
 		_automation_elapsed = fmod(_automation_elapsed, 0.25)
 
 func save_game() -> void:
+	Market.ensure_initialized()
 	last_save_unix = Time.get_unix_time_from_system()
 	var save_data := {
 		"ore": ore,
@@ -433,6 +435,10 @@ func save_game() -> void:
 		"max_efficiency_limit": max_efficiency_limit,
 		"max_click_limit": max_click_limit,
 		"last_save_unix": last_save_unix,
+		"market_base_seed": Market.base_seed,
+		"market_refresh_index": Market.refresh_index,
+		"market_next_refresh_unix": Market.next_refresh_unix,
+		"market_multipliers": Market.multipliers,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
@@ -442,6 +448,8 @@ func save_game() -> void:
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
+		Market.ensure_initialized()
+		Market.update_market(Time.get_unix_time_from_system())
 		last_save_unix = Time.get_unix_time_from_system()
 		emit_signal("ore_changed", ore)
 		emit_signal("cash_changed", cash)
@@ -493,6 +501,17 @@ func load_game() -> void:
 		overclock_time_left = 0.0
 		overclock_active = false
 	last_save_unix = int(data.get("last_save_unix", Time.get_unix_time_from_system()))
+
+	Market.ensure_initialized()
+	Market.base_seed = int(data.get("market_base_seed", Market.base_seed))
+	Market.refresh_index = int(data.get("market_refresh_index", Market.refresh_index))
+	Market.next_refresh_unix = int(data.get("market_next_refresh_unix", Market.next_refresh_unix))
+	Market.multipliers = {}
+	var saved_multipliers: Variant = data.get("market_multipliers", {})
+	if saved_multipliers is Dictionary:
+		for key in saved_multipliers.keys():
+			Market.multipliers[str(key)] = float(saved_multipliers[key])
+	Market.update_market(Time.get_unix_time_from_system())
 
 	apply_offline_progress()
 	emit_signal("ore_changed", ore)

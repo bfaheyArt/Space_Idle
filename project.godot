@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 GameManager="*res://GameManager.gd"
 Economy="*res://Economy.gd"
+Market="*res://Market.gd"
 GameState="*res://GameState.gd"
 
 [display]

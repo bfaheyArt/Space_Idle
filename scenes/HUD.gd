@@ -43,6 +43,7 @@ extends Control
 @onready var max_click_line: HBoxContainer = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxClickLine
 @onready var max_click_spin: SpinBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/MaxClickLine/MaxClickSpin
 @onready var sell_all_materials_button: Button = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/SellAllMaterialsButton
+@onready var market_refresh_label: Label = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/MarketRefreshLabel
 @onready var materials_list: VBoxContainer = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/MaterialsList
 
 var autosave_elapsed: float = 0.0
@@ -50,12 +51,14 @@ var overclock_ui_elapsed: float = 0.0
 var feedback_serial: int = 0
 var _materials_rebuild_pending: bool = false
 var _materials_rebuild_cooldown: float = 0.0
+var _market_countdown_update_elapsed: float = 0.0
 
 func _ready() -> void:
 	GameState.ore_changed.connect(_on_game_state_changed)
 	GameState.cash_changed.connect(_on_game_state_changed)
 	GameState.minerals_changed.connect(_on_game_state_changed)
 	GameState.stats_changed.connect(_on_game_state_changed)
+	Market.market_updated.connect(_on_market_updated)
 	mine_button.pressed.connect(_on_mine_pressed)
 	overclock_button.pressed.connect(_on_overclock_pressed)
 	buy_drone_button.pressed.connect(_on_buy_drone_pressed)
@@ -83,12 +86,21 @@ func _ready() -> void:
 	close_market_button.pressed.connect(_on_close_market_pressed)
 	sell_all_materials_button.pressed.connect(_on_sell_all_materials_pressed)
 	refresh_ui()
+	_update_market_refresh_label()
 
 func _process(delta: float) -> void:
+	var now_unix: int = int(Time.get_unix_time_from_system())
+	Market.update_market(now_unix)
+
 	GameState.update_overclock(delta)
 	GameState.update_automation(delta)
 	GameState.update_mineral_mining(delta)
 	GameState.add_ore(GameState.get_ore_per_sec() * delta)
+
+	_market_countdown_update_elapsed += delta
+	if _market_countdown_update_elapsed >= 0.25:
+		_market_countdown_update_elapsed = 0.0
+		_update_market_refresh_label()
 
 	if GameState.overclock_active:
 		overclock_ui_elapsed += delta
@@ -140,6 +152,7 @@ func refresh_ui() -> void:
 		GameState.get_mineral_amount("tin")
 	]
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
+	_update_market_refresh_label()
 	mine_button.text = "MINE (+%.1f)" % click_gain
 	buy_drone_button.text = "Buy Drone (%.1f)" % drone_cost
 	efficiency_button.text = "Upgrade Efficiency Lv.%d (%.1f)" % [GameState.efficiency_level, efficiency_cost]
@@ -345,6 +358,18 @@ func _on_game_state_changed(_value: Variant = null) -> void:
 	if market_popup.visible:
 		_materials_rebuild_pending = true
 
+
+func _on_market_updated() -> void:
+	_update_market_refresh_label()
+	if market_popup.visible:
+		_materials_rebuild_pending = true
+
+func _update_market_refresh_label() -> void:
+	var seconds_left: int = max(Market.get_seconds_until_refresh(), 0)
+	var minutes: int = int(seconds_left / 60)
+	var seconds: int = int(seconds_left % 60)
+	market_refresh_label.text = "Next refresh: %02d:%02d" % [minutes, seconds]
+
 func _on_mine_pressed() -> void:
 	var gain: float = GameState.get_click_gain()
 	GameState.manual_mine()
@@ -448,6 +473,7 @@ func _on_close_automation_pressed() -> void:
 func _on_open_market_pressed() -> void:
 	close_all_popups()
 	market_popup.visible = true
+	Market.update_market(int(Time.get_unix_time_from_system()))
 	rebuild_materials_list()
 	_materials_rebuild_pending = false
 	_materials_rebuild_cooldown = 0.2
