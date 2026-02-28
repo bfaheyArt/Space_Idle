@@ -12,6 +12,7 @@ var cash: float = 0.0
 var minerals: Dictionary = {}
 var drones_owned: int = 0
 var efficiency_level: int = 0
+var mining_table_id: String = "default"
 var click_level: int = 0
 var overclock_charge: float = 0.0
 var overclock_active: bool = false
@@ -65,6 +66,9 @@ func get_base_ore_per_sec() -> float:
 func get_click_gain() -> float:
 	var economy = _get_economy()
 	return economy.get_click_gain(click_level)
+
+func get_rarity_bonus() -> float:
+	return float(floor(efficiency_level / 10.0))
 
 func add_ore(amount: float) -> void:
 	if amount <= 0.0:
@@ -140,7 +144,7 @@ func clear_minerals() -> void:
 func manual_mine() -> void:
 	var gain: float = get_click_gain()
 	add_ore(gain)
-	var mineral_id: String = Economy.roll_basic_mineral(_mining_rng)
+	var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, mining_table_id, get_rarity_bonus())
 	add_mineral(mineral_id, 1.0)
 	if not overclock_active:
 		overclock_charge = clamp(overclock_charge + CHARGE_PER_CLICK, 0.0, OVERCLOCK_MAX_CHARGE)
@@ -177,7 +181,7 @@ func update_mineral_mining(delta: float) -> void:
 	mining_roll_accumulator += get_mining_rolls_per_sec() * delta
 	while mining_roll_accumulator >= 1.0:
 		mining_roll_accumulator -= 1.0
-		var mineral_id: String = _get_economy().roll_basic_mineral(_mining_rng)
+		var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, mining_table_id, get_rarity_bonus())
 		add_mineral(mineral_id, 1.0)
 
 func can_afford(cost: float) -> bool:
@@ -417,6 +421,7 @@ func save_game() -> void:
 		"minerals": minerals,
 		"drones_owned": drones_owned,
 		"efficiency_level": efficiency_level,
+		"mining_table_id": mining_table_id,
 		"click_level": click_level,
 		"overclock_charge": overclock_charge,
 		"overclock_active": overclock_active,
@@ -479,6 +484,9 @@ func load_game() -> void:
 			minerals[str(key)] = float(saved_minerals[key])
 	drones_owned = int(data.get("drones_owned", 0))
 	efficiency_level = int(data.get("efficiency_level", 0))
+	mining_table_id = str(data.get("mining_table_id", "default"))
+	if mining_table_id.is_empty():
+		mining_table_id = "default"
 	click_level = int(data.get("click_level", 0))
 	overclock_charge = float(data.get("overclock_charge", 0.0))
 	overclock_active = bool(data.get("overclock_active", false))
