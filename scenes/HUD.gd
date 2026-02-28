@@ -4,6 +4,7 @@ extends Control
 @onready var cash_label: Label = $VBox/StatsPanel/StatsVBox/CashLabel
 @onready var mineral_label: Label = $VBox/StatsPanel/StatsVBox/MineralLabel
 @onready var rate_label: Label = $VBox/StatsPanel/StatsVBox/RateLabel
+@onready var layer_label: Label = $VBox/StatsPanel/StatsVBox/LayerLabel
 @onready var mine_button: Button = $VBox/MineRow/MineButton
 @onready var overclock_bar: ProgressBar = $VBox/OverclockPanel/OverclockVBox/OverclockBar
 @onready var overclock_button: Button = $VBox/OverclockPanel/OverclockVBox/OverclockButton
@@ -95,7 +96,7 @@ func _process(delta: float) -> void:
 	GameState.update_overclock(delta)
 	GameState.update_automation(delta)
 	GameState.update_mineral_mining(delta)
-	GameState.add_ore(GameState.get_ore_per_sec() * delta)
+	GameState.add_mined_ore(GameState.get_ore_per_sec() * delta)
 
 	if market_popup.visible:
 		_market_countdown_update_elapsed += delta
@@ -162,6 +163,7 @@ func refresh_ui() -> void:
 		parts.append("%s: %.1f" % [Economy.get_mineral_name(id), GameState.get_mineral_amount(id)])
 	mineral_label.text = " | ".join(parts)
 	rate_label.text = "Rate: %.1f/s" % ore_per_sec
+	layer_label.text = "Layer: %s" % GameState.get_asteroid_layer_name()
 	_update_market_refresh_label()
 	mine_button.text = "MINE (+%.1f)" % click_gain
 	buy_drone_button.text = "Buy Drone (%.1f)" % drone_cost
