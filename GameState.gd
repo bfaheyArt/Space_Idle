@@ -32,7 +32,7 @@ func get_ore_per_sec() -> float:
 
 func get_base_ore_per_sec() -> float:
 	var economy = _get_economy()
-	return economy.get_ore_per_sec(drones_owned, efficiency_level)
+	return economy.get_ore_per_sec(drones_owned, efficiency_level) * get_overclock_multiplier()
 
 func get_click_gain() -> float:
 	var economy = _get_economy()
