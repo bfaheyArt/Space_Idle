@@ -59,11 +59,19 @@ text = ""
 layout_mode = 2
 text = ""
 
-[node name="OpenShopButton" type="Button" parent="VBox"]
+[node name="OpenUpgradesButton" type="Button" parent="VBox"]
 layout_mode = 2
-text = "SHOP"
+text = "Upgrades"
 
-[node name="ShopPopup" type="PanelContainer" parent="."]
+[node name="OpenAutomationButton" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Automation"
+
+[node name="OpenMarketButton" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Mineral Market"
+
+[node name="UpgradesPopup" type="PanelContainer" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = 1
@@ -74,103 +82,123 @@ offset_top = 16.0
 offset_right = -16.0
 offset_bottom = 536.0
 
-[node name="ShopRoot" type="VBoxContainer" parent="ShopPopup"]
+[node name="PopupRoot" type="VBoxContainer" parent="UpgradesPopup"]
 layout_mode = 2
 
-[node name="ShopHeader" type="HBoxContainer" parent="ShopPopup/ShopRoot"]
+[node name="Header" type="HBoxContainer" parent="UpgradesPopup/PopupRoot"]
 layout_mode = 2
 
-[node name="ShopTitle" type="Label" parent="ShopPopup/ShopRoot/ShopHeader"]
+[node name="TitleLabel" type="Label" parent="UpgradesPopup/PopupRoot/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Shop"
+text = "Upgrades"
 
-[node name="CloseShopButton" type="Button" parent="ShopPopup/ShopRoot/ShopHeader"]
+[node name="CloseButton" type="Button" parent="UpgradesPopup/PopupRoot/Header"]
 layout_mode = 2
 text = "X"
 
-[node name="ShopScroll" type="ScrollContainer" parent="ShopPopup/ShopRoot"]
+[node name="Scroll" type="ScrollContainer" parent="UpgradesPopup/PopupRoot"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ShopVBox" type="VBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll"]
+[node name="VBox" type="VBoxContainer" parent="UpgradesPopup/PopupRoot/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BuyDroneButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="BuyDroneButton" type="Button" parent="UpgradesPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 text = "Buy Drone (10.0)"
 
-[node name="EfficiencyButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="EfficiencyButton" type="Button" parent="UpgradesPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 text = "Upgrade Efficiency Lv.0 (50.0)"
 
-[node name="ClickPowerButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="ClickPowerButton" type="Button" parent="UpgradesPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 text = "Upgrade Click Power Lv.0 (25.0)"
 
-[node name="MaterialsLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
-layout_mode = 2
-text = "Materials"
+[node name="AutomationPopup" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -376.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 536.0
 
-[node name="SellAllMaterialsButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
-layout_mode = 2
-text = "Sell All Materials"
-
-[node name="MaterialsList" type="VBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="PopupRoot" type="VBoxContainer" parent="AutomationPopup"]
 layout_mode = 2
 
-[node name="AutomationLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="Header" type="HBoxContainer" parent="AutomationPopup/PopupRoot"]
 layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="AutomationPopup/PopupRoot/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Automation"
 
-[node name="BuyAutoOverclockButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="CloseButton" type="Button" parent="AutomationPopup/PopupRoot/Header"]
 layout_mode = 2
-text = "Buy Auto Overclock"
+text = "X"
 
-[node name="AutoOverclockToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="Scroll" type="ScrollContainer" parent="AutomationPopup/PopupRoot"]
 layout_mode = 2
-text = "Enable Auto Overclock"
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="BuyAutoBuyDronesButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="VBox" type="VBoxContainer" parent="AutomationPopup/PopupRoot/Scroll"]
 layout_mode = 2
-text = "Buy Auto-Buy Drones"
+size_flags_horizontal = 3
 
-[node name="AutoBuyDronesToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
-layout_mode = 2
-text = "Enable Auto-Buy Drones"
-
-[node name="AutoBuyEfficiencyPurchaseButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
-layout_mode = 2
-text = "Buy Auto-Buy Efficiency"
-
-[node name="AutoBuyEfficiencyToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
-layout_mode = 2
-text = "Enable Auto-Buy Efficiency"
-
-[node name="AutoBuyClickPurchaseButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
-layout_mode = 2
-text = "Buy Auto-Buy Click Power"
-
-[node name="AutoBuyClickToggle" type="CheckBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
-layout_mode = 2
-text = "Enable Auto-Buy Click Power"
-
-[node name="AutomationNoteLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="AutomationNoteLabel" type="Label" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 text = "Note: Auto-Priority Controller unlocks priority and max limits for automation."
 autowrap_mode = 2
 
-[node name="AutoPriorityPurchaseButton" type="Button" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="BuyAutoOverclockButton" type="Button" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Buy Auto Overclock"
+
+[node name="AutoOverclockToggle" type="CheckBox" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Enable Auto Overclock"
+
+[node name="BuyAutoBuyDronesButton" type="Button" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Buy Auto-Buy Drones"
+
+[node name="AutoBuyDronesToggle" type="CheckBox" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Enable Auto-Buy Drones"
+
+[node name="AutoBuyEfficiencyPurchaseButton" type="Button" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Buy Auto-Buy Efficiency"
+
+[node name="AutoBuyEfficiencyToggle" type="CheckBox" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Enable Auto-Buy Efficiency"
+
+[node name="AutoBuyClickPurchaseButton" type="Button" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Buy Auto-Buy Click Power"
+
+[node name="AutoBuyClickToggle" type="CheckBox" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Enable Auto-Buy Click Power"
+
+[node name="AutoPriorityPurchaseButton" type="Button" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 text = "Buy Auto-Priority Controller"
 
-[node name="PriorityLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="PriorityLabel" type="Label" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 text = "Spend Priority"
 
-[node name="PriorityOption" type="OptionButton" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="PriorityOption" type="OptionButton" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 item_count = 3
 selected = 0
@@ -181,45 +209,91 @@ popup/item_1/id = 1
 popup/item_2/text = "Click"
 popup/item_2/id = 2
 
-[node name="LimitsLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="LimitsLabel" type="Label" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 text = "Automation Limits"
 
-[node name="MaxDronesLine" type="HBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="MaxDronesLine" type="HBoxContainer" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 
-[node name="MaxDronesLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine"]
+[node name="MaxDronesLabel" type="Label" parent="AutomationPopup/PopupRoot/Scroll/VBox/MaxDronesLine"]
 layout_mode = 2
 text = "Max Drones (0=∞)"
 
-[node name="MaxDronesSpin" type="SpinBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxDronesLine"]
+[node name="MaxDronesSpin" type="SpinBox" parent="AutomationPopup/PopupRoot/Scroll/VBox/MaxDronesLine"]
 layout_mode = 2
 min_value = 0.0
 max_value = 9999.0
 step = 1.0
 
-[node name="MaxEfficiencyLine" type="HBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="MaxEfficiencyLine" type="HBoxContainer" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 
-[node name="MaxEfficiencyLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine"]
+[node name="MaxEfficiencyLabel" type="Label" parent="AutomationPopup/PopupRoot/Scroll/VBox/MaxEfficiencyLine"]
 layout_mode = 2
 text = "Max Efficiency (0=∞)"
 
-[node name="MaxEfficiencySpin" type="SpinBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxEfficiencyLine"]
+[node name="MaxEfficiencySpin" type="SpinBox" parent="AutomationPopup/PopupRoot/Scroll/VBox/MaxEfficiencyLine"]
 layout_mode = 2
 min_value = 0.0
 max_value = 999.0
 step = 1.0
 
-[node name="MaxClickLine" type="HBoxContainer" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox"]
+[node name="MaxClickLine" type="HBoxContainer" parent="AutomationPopup/PopupRoot/Scroll/VBox"]
 layout_mode = 2
 
-[node name="MaxClickLabel" type="Label" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine"]
+[node name="MaxClickLabel" type="Label" parent="AutomationPopup/PopupRoot/Scroll/VBox/MaxClickLine"]
 layout_mode = 2
 text = "Max Click (0=∞)"
 
-[node name="MaxClickSpin" type="SpinBox" parent="ShopPopup/ShopRoot/ShopScroll/ShopVBox/MaxClickLine"]
+[node name="MaxClickSpin" type="SpinBox" parent="AutomationPopup/PopupRoot/Scroll/VBox/MaxClickLine"]
 layout_mode = 2
 min_value = 0.0
 max_value = 999.0
 step = 1.0
+
+[node name="MarketPopup" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -376.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 536.0
+
+[node name="PopupRoot" type="VBoxContainer" parent="MarketPopup"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarketPopup/PopupRoot"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarketPopup/PopupRoot/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Mineral Market"
+
+[node name="CloseButton" type="Button" parent="MarketPopup/PopupRoot/Header"]
+layout_mode = 2
+text = "X"
+
+[node name="Scroll" type="ScrollContainer" parent="MarketPopup/PopupRoot"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="VBox" type="VBoxContainer" parent="MarketPopup/PopupRoot/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MaterialsLabel" type="Label" parent="MarketPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Materials"
+
+[node name="SellAllMaterialsButton" type="Button" parent="MarketPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
+text = "Sell All Materials"
+
+[node name="MaterialsList" type="VBoxContainer" parent="MarketPopup/PopupRoot/Scroll/VBox"]
+layout_mode = 2
