@@ -10,10 +10,16 @@ var drones_owned: int = 0
 var efficiency_level: int = 0
 var click_level: int = 0
 var overclock_charge: float = 0.0
+var overclock_active: bool = false
+var overclock_time_left: float = 0.0
 var last_save_unix: int = 0
 
 const SAVE_PATH := "user://save.json"
 const MAX_OFFLINE_SECONDS := 8 * 60 * 60
+const OVERCLOCK_MAX_CHARGE := 100.0
+const OVERCLOCK_DURATION := 10.0
+const OVERCLOCK_MULTIPLIER := 2.0
+const CHARGE_PER_CLICK := 1.0
 
 func _get_economy() -> Node:
 	return get_node("/root/Economy")
@@ -22,6 +28,9 @@ func _ready() -> void:
 	load_game()
 
 func get_ore_per_sec() -> float:
+	return get_base_ore_per_sec() * get_overclock_multiplier()
+
+func get_base_ore_per_sec() -> float:
 	var economy = _get_economy()
 	return economy.get_ore_per_sec(drones_owned, efficiency_level)
 
@@ -38,7 +47,36 @@ func add_ore(amount: float) -> void:
 func manual_mine() -> void:
 	var gain: float = get_click_gain()
 	add_ore(gain)
+	if not overclock_active:
+		overclock_charge = clamp(overclock_charge + CHARGE_PER_CLICK, 0.0, OVERCLOCK_MAX_CHARGE)
+		emit_signal("stats_changed")
 	emit_signal("mined", gain)
+
+func can_activate_overclock() -> bool:
+	return overclock_charge >= OVERCLOCK_MAX_CHARGE and not overclock_active
+
+func activate_overclock() -> bool:
+	if not can_activate_overclock():
+		return false
+	overclock_active = true
+	overclock_time_left = OVERCLOCK_DURATION
+	overclock_charge = 0.0
+	emit_signal("stats_changed")
+	return true
+
+func get_overclock_multiplier() -> float:
+	if overclock_active:
+		return OVERCLOCK_MULTIPLIER
+	return 1.0
+
+func update_overclock(delta: float) -> void:
+	if not overclock_active:
+		return
+	overclock_time_left -= delta
+	if overclock_time_left <= 0.0:
+		overclock_active = false
+		overclock_time_left = 0.0
+		emit_signal("stats_changed")
 
 func can_afford(cost: float) -> bool:
 	return ore >= cost
@@ -86,6 +124,8 @@ func save_game() -> void:
 		"efficiency_level": efficiency_level,
 		"click_level": click_level,
 		"overclock_charge": overclock_charge,
+		"overclock_active": overclock_active,
+		"overclock_time_left": overclock_time_left,
 		"last_save_unix": last_save_unix,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -119,6 +159,11 @@ func load_game() -> void:
 	efficiency_level = int(data.get("efficiency_level", 0))
 	click_level = int(data.get("click_level", 0))
 	overclock_charge = float(data.get("overclock_charge", 0.0))
+	overclock_active = bool(data.get("overclock_active", false))
+	overclock_time_left = float(data.get("overclock_time_left", 0.0))
+	if overclock_time_left <= 0.0:
+		overclock_time_left = 0.0
+		overclock_active = false
 	last_save_unix = int(data.get("last_save_unix", Time.get_unix_time_from_system()))
 
 	apply_offline_progress()
@@ -128,9 +173,24 @@ func load_game() -> void:
 func apply_offline_progress() -> void:
 	var now: int = Time.get_unix_time_from_system()
 	var elapsed: int = clamp(now - last_save_unix, 0, MAX_OFFLINE_SECONDS)
-	if elapsed > 0:
-		ore += get_ore_per_sec() * float(elapsed)
-		last_save_unix = now
+	if elapsed <= 0:
+		return
+
+	var elapsed_f: float = float(elapsed)
+	var base_rate: float = get_base_ore_per_sec()
+	var boosted_time: float = 0.0
+
+	if overclock_active and overclock_time_left > 0.0:
+		boosted_time = min(elapsed_f, overclock_time_left)
+		overclock_time_left -= boosted_time
+		if overclock_time_left <= 0.0:
+			overclock_time_left = 0.0
+			overclock_active = false
+
+	var normal_time: float = elapsed_f - boosted_time
+	ore += base_rate * boosted_time * OVERCLOCK_MULTIPLIER
+	ore += base_rate * normal_time
+	last_save_unix = now
 
 func debug_grant_starting_resources() -> void:
 	ore = 100.0
