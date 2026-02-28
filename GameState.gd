@@ -1,11 +1,15 @@
 extends Node
 
 signal ore_changed(new_ore: float)
+signal cash_changed(new_cash: float)
+signal minerals_changed()
 signal stats_changed()
 signal drones_changed(new_count: int)
 signal mined(amount: float)
 
 var ore: float = 0.0
+var cash: float = 0.0
+var minerals: Dictionary = {}
 var drones_owned: int = 0
 var efficiency_level: int = 0
 var click_level: int = 0
@@ -58,6 +62,44 @@ func add_ore(amount: float) -> void:
 		return
 	ore += amount
 	emit_signal("ore_changed", ore)
+
+func add_cash(amount: float) -> void:
+	if amount == 0.0:
+		return
+	cash = max(cash + amount, 0.0)
+	emit_signal("cash_changed", cash)
+
+func can_afford_cash(cost: float) -> bool:
+	return cash >= cost
+
+func spend_cash(cost: float) -> bool:
+	if not can_afford_cash(cost):
+		return false
+	add_cash(-cost)
+	return true
+
+func add_mineral(id: String, amount: float) -> void:
+	if is_zero_approx(amount):
+		return
+	var economy = _get_economy()
+	if economy.get_mineral_def(id).is_empty():
+		return
+	var current: float = float(minerals.get(id, 0.0))
+	var next_amount: float = max(current + amount, 0.0)
+	if is_equal_approx(next_amount, current):
+		return
+	minerals[id] = next_amount
+	emit_signal("minerals_changed")
+
+func get_mineral_amount(id: String) -> float:
+	return float(minerals.get(id, 0.0))
+
+func get_all_minerals() -> Dictionary:
+	return minerals.duplicate()
+
+func clear_minerals() -> void:
+	minerals.clear()
+	emit_signal("minerals_changed")
 
 func manual_mine() -> void:
 	var gain: float = get_click_gain()
@@ -325,6 +367,8 @@ func save_game() -> void:
 	last_save_unix = Time.get_unix_time_from_system()
 	var save_data := {
 		"ore": ore,
+		"cash": cash,
+		"minerals": minerals,
 		"drones_owned": drones_owned,
 		"efficiency_level": efficiency_level,
 		"click_level": click_level,
@@ -356,6 +400,8 @@ func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
 		last_save_unix = Time.get_unix_time_from_system()
 		emit_signal("ore_changed", ore)
+		emit_signal("cash_changed", cash)
+		emit_signal("minerals_changed")
 		emit_signal("stats_changed")
 		return
 
@@ -373,6 +419,12 @@ func load_game() -> void:
 
 	var data: Dictionary = json.data if json.data is Dictionary else {}
 	ore = float(data.get("ore", 0.0))
+	cash = float(data.get("cash", 0.0))
+	minerals = {}
+	var saved_minerals: Variant = data.get("minerals", {})
+	if saved_minerals is Dictionary:
+		for key in saved_minerals.keys():
+			minerals[str(key)] = float(saved_minerals[key])
 	drones_owned = int(data.get("drones_owned", 0))
 	efficiency_level = int(data.get("efficiency_level", 0))
 	click_level = int(data.get("click_level", 0))
@@ -400,6 +452,8 @@ func load_game() -> void:
 
 	apply_offline_progress()
 	emit_signal("ore_changed", ore)
+	emit_signal("cash_changed", cash)
+	emit_signal("minerals_changed")
 	emit_signal("stats_changed")
 
 func apply_offline_progress() -> void:
@@ -427,3 +481,9 @@ func apply_offline_progress() -> void:
 func debug_grant_starting_resources() -> void:
 	ore = 100.0
 	emit_signal("ore_changed", ore)
+
+func debug_grant_test_minerals() -> void:
+	add_mineral("iron", 100.0)
+	add_mineral("copper", 25.0)
+	add_mineral("tin", 5.0)
+	add_cash(50.0)
