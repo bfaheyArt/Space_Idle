@@ -189,14 +189,7 @@ func _refresh_upgrade_buttons() -> void:
 	buy_drone_button.disabled = not GameState.can_afford(drone_cost)
 	efficiency_button.disabled = not GameState.can_afford(efficiency_cost)
 	click_power_button.disabled = not GameState.can_afford(click_cost)
-	_rebuild_tools_list()
-
-func _refresh_automation_popup() -> void:
-	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
-	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
-	var auto_buy_eff_cost: float = Economy.get_auto_buy_eff_cost(GameState.has_auto_buy_efficiency)
-	var auto_buy_click_cost: float = Economy.get_auto_buy_click_cost(GameState.has_auto_buy_click)
-	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
+	_rebuild_mining_tools_list()
 
 func _refresh_automation_popup() -> void:
 	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
