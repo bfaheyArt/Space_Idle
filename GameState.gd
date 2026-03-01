@@ -6,6 +6,9 @@ signal minerals_changed()
 signal stats_changed()
 signal drones_changed(new_count: int)
 signal mined(amount: float)
+signal layer_changed(new_layer: int)
+
+enum AsteroidLayer { CRUST, MANTLE, CORE }
 
 var ore: float = 0.0
 var cash: float = 0.0
@@ -13,6 +16,8 @@ var minerals: Dictionary = {}
 var drones_owned: int = 0
 var efficiency_level: int = 0
 var mining_table_id: String = "default"
+var ore_mined_total: float = 0.0
+var asteroid_layer: int = AsteroidLayer.CRUST
 var click_level: int = 0
 var overclock_charge: float = 0.0
 var overclock_active: bool = false
@@ -42,6 +47,8 @@ const OVERCLOCK_MAX_CHARGE := 100.0
 const OVERCLOCK_DURATION := 10.0
 const OVERCLOCK_MULTIPLIER := 2.0
 const CHARGE_PER_CLICK := 1.0
+const MANTLE_THRESHOLD := 250.0
+const CORE_THRESHOLD := 1000.0
 
 func _get_economy() -> Node:
 	return get_node("/root/Economy")
@@ -70,11 +77,60 @@ func get_click_gain() -> float:
 func get_rarity_bonus() -> float:
 	return float(floor(efficiency_level / 10.0))
 
+func get_asteroid_layer_name() -> String:
+	match asteroid_layer:
+		AsteroidLayer.MANTLE:
+			return "MANTLE"
+		AsteroidLayer.CORE:
+			return "CORE"
+		_:
+			return "CRUST"
+
+func get_current_drop_table_id() -> String:
+	match asteroid_layer:
+		AsteroidLayer.MANTLE:
+			return "mantle"
+		AsteroidLayer.CORE:
+			return "core"
+		_:
+			return "crust"
+
+func _calculate_layer_from_ore_mined(ore_mined: float) -> int:
+	if ore_mined >= CORE_THRESHOLD:
+		return AsteroidLayer.CORE
+	if ore_mined >= MANTLE_THRESHOLD:
+		return AsteroidLayer.MANTLE
+	return AsteroidLayer.CRUST
+
+func _update_asteroid_layer_internal(emit_signals: bool) -> void:
+	var next_layer: int = _calculate_layer_from_ore_mined(ore_mined_total)
+	if next_layer == asteroid_layer:
+		return
+	asteroid_layer = next_layer
+	if emit_signals:
+		emit_signal("layer_changed", asteroid_layer)
+		emit_signal("stats_changed")
+
+func update_asteroid_layer() -> void:
+	_update_asteroid_layer_internal(true)
+
 func add_ore(amount: float) -> void:
 	if amount <= 0.0:
 		return
 	ore += amount
 	emit_signal("ore_changed", ore)
+
+func _add_mined_ore_internal(amount: float, emit_signals: bool) -> void:
+	if amount <= 0.0:
+		return
+	ore += amount
+	ore_mined_total += amount
+	if emit_signals:
+		emit_signal("ore_changed", ore)
+	_update_asteroid_layer_internal(emit_signals)
+
+func add_mined_ore(amount: float) -> void:
+	_add_mined_ore_internal(amount, true)
 
 func add_cash(amount: float) -> void:
 	if amount == 0.0:
@@ -143,8 +199,9 @@ func clear_minerals() -> void:
 
 func manual_mine() -> void:
 	var gain: float = get_click_gain()
-	add_ore(gain)
-	var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, mining_table_id, get_rarity_bonus())
+	add_mined_ore(gain)
+	var table_id: String = get_current_drop_table_id()
+	var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, table_id, get_rarity_bonus())
 	add_mineral(mineral_id, 1.0)
 	if not overclock_active:
 		overclock_charge = clamp(overclock_charge + CHARGE_PER_CLICK, 0.0, OVERCLOCK_MAX_CHARGE)
@@ -179,9 +236,10 @@ func update_overclock(delta: float) -> void:
 
 func update_mineral_mining(delta: float) -> void:
 	mining_roll_accumulator += get_mining_rolls_per_sec() * delta
+	var table_id: String = get_current_drop_table_id()
 	while mining_roll_accumulator >= 1.0:
 		mining_roll_accumulator -= 1.0
-		var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, mining_table_id, get_rarity_bonus())
+		var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, table_id, get_rarity_bonus())
 		add_mineral(mineral_id, 1.0)
 
 func can_afford(cost: float) -> bool:
@@ -422,6 +480,8 @@ func save_game() -> void:
 		"drones_owned": drones_owned,
 		"efficiency_level": efficiency_level,
 		"mining_table_id": mining_table_id,
+		"ore_mined_total": ore_mined_total,
+		"asteroid_layer": asteroid_layer,
 		"click_level": click_level,
 		"overclock_charge": overclock_charge,
 		"overclock_active": overclock_active,
@@ -487,6 +547,8 @@ func load_game() -> void:
 	mining_table_id = str(data.get("mining_table_id", "default"))
 	if mining_table_id.is_empty():
 		mining_table_id = "default"
+	ore_mined_total = max(0.0, float(data.get("ore_mined_total", 0.0)))
+	asteroid_layer = _calculate_layer_from_ore_mined(ore_mined_total)
 	click_level = int(data.get("click_level", 0))
 	overclock_charge = float(data.get("overclock_charge", 0.0))
 	overclock_active = bool(data.get("overclock_active", false))
@@ -521,13 +583,13 @@ func load_game() -> void:
 			Market.multipliers[str(key)] = float(saved_multipliers[key])
 	Market.update_market(Time.get_unix_time_from_system())
 
-	apply_offline_progress()
+	apply_offline_progress(false)
 	emit_signal("ore_changed", ore)
 	emit_signal("cash_changed", cash)
 	emit_signal("minerals_changed")
 	emit_signal("stats_changed")
 
-func apply_offline_progress() -> void:
+func apply_offline_progress(emit_signals: bool = true) -> void:
 	var now: int = Time.get_unix_time_from_system()
 	var elapsed: int = clamp(now - last_save_unix, 0, MAX_OFFLINE_SECONDS)
 	if elapsed <= 0:
@@ -545,8 +607,8 @@ func apply_offline_progress() -> void:
 			overclock_active = false
 
 	var normal_time: float = elapsed_f - boosted_time
-	ore += base_rate * boosted_time * OVERCLOCK_MULTIPLIER
-	ore += base_rate * normal_time
+	_add_mined_ore_internal(base_rate * boosted_time * OVERCLOCK_MULTIPLIER, emit_signals)
+	_add_mined_ore_internal(base_rate * normal_time, emit_signals)
 	last_save_unix = now
 
 func debug_grant_starting_resources() -> void:
@@ -558,3 +620,7 @@ func debug_grant_test_minerals() -> void:
 	add_mineral("copper", 25.0)
 	add_mineral("tin", 5.0)
 	add_cash(50.0)
+
+func debug_set_ore_mined_total(value: float) -> void:
+	ore_mined_total = max(0.0, value)
+	update_asteroid_layer()

@@ -39,6 +39,10 @@ text = "Cash: 0.0"
 layout_mode = 2
 text = "Rate: 0.0/s"
 
+[node name="LayerLabel" type="Label" parent="VBox/StatsPanel/StatsVBox"]
+layout_mode = 2
+text = "Layer: CRUST"
+
 [node name="MineralLabel" type="Label" parent="VBox/StatsPanel/StatsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13

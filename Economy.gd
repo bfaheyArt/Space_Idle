@@ -39,6 +39,30 @@ const DROP_TABLES := {
 		"gold": 0.2,
 		"platinum": 0.05,
 	},
+	"crust": {
+		"iron": 85.0,
+		"copper": 12.0,
+		"tin": 2.5,
+		"silver": 0.35,
+		"gold": 0.1,
+		"platinum": 0.05,
+	},
+	"mantle": {
+		"iron": 58.0,
+		"copper": 24.0,
+		"tin": 12.0,
+		"silver": 3.0,
+		"gold": 0.8,
+		"platinum": 0.2,
+	},
+	"core": {
+		"iron": 35.0,
+		"copper": 23.0,
+		"tin": 22.0,
+		"silver": 12.0,
+		"gold": 5.0,
+		"platinum": 3.0,
+	},
 }
 
 func get_mineral_ids() -> Array[String]:
