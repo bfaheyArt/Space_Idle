@@ -130,7 +130,7 @@ func _process(delta: float) -> void:
 		_tools_rebuild_cooldown = max(_tools_rebuild_cooldown - delta, 0.0)
 		if _tools_rebuild_pending and _tools_rebuild_cooldown <= 0.0:
 			_tools_rebuild_pending = false
-			_tools_rebuild_cooldown = 0.25
+			_tools_rebuild_cooldown = 0.2
 			_rebuild_mining_tools_list()
 	else:
 		_tools_rebuild_pending = false
