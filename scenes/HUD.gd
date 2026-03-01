@@ -189,7 +189,6 @@ func _refresh_upgrade_buttons() -> void:
 	buy_drone_button.disabled = not GameState.can_afford(drone_cost)
 	efficiency_button.disabled = not GameState.can_afford(efficiency_cost)
 	click_power_button.disabled = not GameState.can_afford(click_cost)
-	_rebuild_mining_tools_list()
 
 func _refresh_automation_popup() -> void:
 	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
