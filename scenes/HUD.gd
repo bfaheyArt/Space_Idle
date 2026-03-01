@@ -459,9 +459,10 @@ func _on_ore_changed(_value: Variant = null) -> void:
 	_refresh_upgrade_buttons()
 
 func _on_cash_changed(_value: Variant = null) -> void:
-	cash_label.text = "Cash: %.1f" % GameState.cash
+	_refresh_stats_labels()
 	if upgrades_popup.visible:
 		_tools_rebuild_pending = true
+		_tools_rebuild_cooldown = 0.0
 	_refresh_sell_all_button()
 
 func _on_minerals_changed(_value: Variant = null) -> void:
