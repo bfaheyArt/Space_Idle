@@ -7,6 +7,7 @@ signal stats_changed()
 signal drones_changed(new_count: int)
 signal mined(amount: float)
 signal layer_changed(new_layer: int)
+signal ascension_changed()
 
 enum AsteroidLayer { CRUST, MANTLE, CORE }
 
@@ -42,6 +43,8 @@ var _automation_elapsed: float = 0.0
 var mining_roll_accumulator: float = 0.0
 var _mining_rng := RandomNumberGenerator.new()
 var last_save_unix: int = 0
+var ascension_points: float = 0.0
+var ascension_upgrades: Dictionary = {}
 
 const SAVE_PATH := "user://save.json"
 const MAX_OFFLINE_SECONDS := 8 * 60 * 60
@@ -51,6 +54,51 @@ const OVERCLOCK_MULTIPLIER := 2.0
 const CHARGE_PER_CLICK := 1.0
 const MANTLE_THRESHOLD := 250.0
 const CORE_THRESHOLD := 1000.0
+const PRESTIGE_UNLOCK_THRESHOLD := CORE_THRESHOLD + 500.0
+const AP_ORE_DIVISOR := 1000.0
+const ASC_UPGRADE_RARITY_BONUS := "rarity_bonus"
+const ASC_UPGRADE_MINING_SPEED := "mining_speed"
+const ASC_UPGRADE_PRICE_DISCOUNT := "price_discount"
+const ASC_UPGRADE_AUTO_MINER := "auto_miner"
+const ASC_UPGRADE_EARLY_TOOLS := "early_tools"
+
+const ASCENSION_UPGRADES_DEF := {
+	ASC_UPGRADE_RARITY_BONUS: {
+		"name": "+1 Permanent Rarity Bonus",
+		"desc": "Increases rarity bonus for all mineral rolls.",
+		"base_cost": 1.0,
+		"cost_growth": 1.8,
+		"max_level": 20,
+	},
+	ASC_UPGRADE_MINING_SPEED: {
+		"name": "+5% Permanent Mining Speed",
+		"desc": "Boosts ore/sec and mineral roll speed permanently.",
+		"base_cost": 1.0,
+		"cost_growth": 1.7,
+		"max_level": 40,
+	},
+	ASC_UPGRADE_PRICE_DISCOUNT: {
+		"name": "+2% Global Upgrade Discount",
+		"desc": "Reduces ore and cash upgrade costs permanently.",
+		"base_cost": 2.0,
+		"cost_growth": 2.2,
+		"max_level": 20,
+	},
+	ASC_UPGRADE_AUTO_MINER: {
+		"name": "Unlock Auto-Buy Drones at Run Start",
+		"desc": "Starts each run with Auto-Buy Drones unlocked.",
+		"base_cost": 5.0,
+		"cost_growth": 1.0,
+		"max_level": 1,
+	},
+	ASC_UPGRADE_EARLY_TOOLS: {
+		"name": "Start With Core Drill",
+		"desc": "Each run starts with the Core Drill unlocked.",
+		"base_cost": 4.0,
+		"cost_growth": 1.0,
+		"max_level": 1,
+	},
+}
 
 func _get_economy() -> Node:
 	return get_node("/root/Economy")
@@ -66,18 +114,129 @@ func get_ore_per_sec() -> float:
 func get_mining_rolls_per_sec() -> float:
 	var economy = _get_economy()
 	var base_rolls_per_sec: float = economy.get_base_mining_rolls_per_sec(drones_owned, efficiency_level)
-	return base_rolls_per_sec * get_overclock_multiplier()
+	return base_rolls_per_sec * get_mining_speed_multiplier() * get_overclock_multiplier()
 
 func get_base_ore_per_sec() -> float:
 	var economy = _get_economy()
-	return economy.get_ore_per_sec(drones_owned, efficiency_level)
+	return economy.get_ore_per_sec(drones_owned, efficiency_level) * get_mining_speed_multiplier()
 
 func get_click_gain() -> float:
 	var economy = _get_economy()
 	return economy.get_click_gain(click_level)
 
 func get_rarity_bonus() -> float:
-	return float(floor(efficiency_level / 10.0))
+	return float(floor(efficiency_level / 10.0)) + get_ascension_rarity_bonus()
+
+func get_mining_speed_multiplier() -> float:
+	return 1.0 + (0.05 * float(get_ascension_upgrade_level(ASC_UPGRADE_MINING_SPEED)))
+
+func get_global_price_discount_multiplier() -> float:
+	var discount_level: int = get_ascension_upgrade_level(ASC_UPGRADE_PRICE_DISCOUNT)
+	var discount_ratio: float = clamp(float(discount_level) * 0.02, 0.0, 0.5)
+	return 1.0 - discount_ratio
+
+func get_ascension_rarity_bonus() -> float:
+	return float(get_ascension_upgrade_level(ASC_UPGRADE_RARITY_BONUS))
+
+func get_ascension_upgrade_level(id: String) -> int:
+	return int(max(0, int(ascension_upgrades.get(id, 0))))
+
+func has_ascension_upgrade(id: String) -> bool:
+	return get_ascension_upgrade_level(id) > 0
+
+func get_ascension_upgrade_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for id in ASCENSION_UPGRADES_DEF.keys():
+		ids.append(str(id))
+	ids.sort()
+	return ids
+
+func get_ascension_upgrade_def(id: String) -> Dictionary:
+	if not ASCENSION_UPGRADES_DEF.has(id):
+		return {}
+	return ASCENSION_UPGRADES_DEF[id]
+
+func get_ascension_upgrade_cost(id: String) -> float:
+	var def: Dictionary = get_ascension_upgrade_def(id)
+	if def.is_empty():
+		return INF
+	var level: int = get_ascension_upgrade_level(id)
+	var max_level: int = int(def.get("max_level", 1))
+	if level >= max_level:
+		return INF
+	var base_cost: float = float(def.get("base_cost", 1.0))
+	var growth: float = float(def.get("cost_growth", 1.0))
+	return base_cost * pow(growth, level)
+
+func can_buy_ascension_upgrade(id: String) -> bool:
+	var cost: float = get_ascension_upgrade_cost(id)
+	if not is_finite(cost):
+		return false
+	return ascension_points >= cost
+
+func buy_ascension_upgrade(id: String) -> bool:
+	if not can_buy_ascension_upgrade(id):
+		return false
+	var cost: float = get_ascension_upgrade_cost(id)
+	ascension_points -= cost
+	ascension_upgrades[id] = get_ascension_upgrade_level(id) + 1
+	emit_signal("ascension_changed")
+	emit_signal("stats_changed")
+	return true
+
+func calculate_prestige_ap_reward() -> float:
+	return floor(max(ore_mined_total, 0.0) / AP_ORE_DIVISOR)
+
+func can_prestige() -> bool:
+	return ore_mined_total >= PRESTIGE_UNLOCK_THRESHOLD
+
+func prestige() -> float:
+	if not can_prestige():
+		return 0.0
+	var reward: float = calculate_prestige_ap_reward()
+	if reward > 0.0:
+		ascension_points += reward
+
+	ore = 0.0
+	cash = 0.0
+	minerals.clear()
+	drones_owned = 0
+	efficiency_level = 0
+	click_level = 0
+	ore_mined_total = 0.0
+	mining_table_id = "default"
+	owned_tools.clear()
+	equipped_tool_id = "none"
+	overclock_charge = 0.0
+	overclock_active = false
+	overclock_time_left = 0.0
+	has_auto_overclock = false
+	auto_overclock_enabled = false
+	has_auto_buy_drones = has_ascension_upgrade(ASC_UPGRADE_AUTO_MINER)
+	auto_buy_drones_enabled = has_auto_buy_drones
+	has_auto_buy_efficiency = false
+	auto_buy_efficiency_enabled = false
+	has_auto_buy_click = false
+	auto_buy_click_enabled = false
+	has_auto_priority_controller = false
+	automation_priority = AutomationPriority.DRONES
+	max_drones_limit = 0
+	max_efficiency_limit = 0
+	max_click_limit = 0
+	_automation_elapsed = 0.0
+	mining_roll_accumulator = 0.0
+	if has_ascension_upgrade(ASC_UPGRADE_EARLY_TOOLS):
+		owned_tools["core_drill"] = true
+	asteroid_layer = _calculate_layer_from_ore_mined(ore_mined_total)
+
+	emit_signal("ore_changed", ore)
+	emit_signal("cash_changed", cash)
+	emit_signal("minerals_changed")
+	emit_signal("drones_changed", drones_owned)
+	emit_signal("layer_changed", asteroid_layer)
+	emit_signal("ascension_changed")
+	emit_signal("stats_changed")
+	return reward
 
 func get_asteroid_layer_name() -> String:
 	match asteroid_layer:
@@ -265,12 +424,12 @@ func can_buy_tool(tool_id: String) -> bool:
 	var tool_def: Dictionary = Economy.get_mining_tool_def(tool_id)
 	if tool_def.is_empty() or has_tool(tool_id):
 		return false
-	return can_afford_cash(Economy.get_mining_tool_cost(tool_id))
+	return can_afford_cash(get_mining_tool_cost(tool_id))
 
 func buy_tool(tool_id: String) -> bool:
 	if not can_buy_tool(tool_id):
 		return false
-	if not spend_cash(Economy.get_mining_tool_cost(tool_id)):
+	if not spend_cash(get_mining_tool_cost(tool_id)):
 		return false
 	owned_tools[tool_id] = true
 	emit_signal("stats_changed")
@@ -290,6 +449,21 @@ func equip_tool(tool_id: String) -> void:
 func can_afford(cost: float) -> bool:
 	return ore >= cost
 
+func get_drone_cost() -> float:
+	var economy = _get_economy()
+	return economy.get_drone_cost(drones_owned) * get_global_price_discount_multiplier()
+
+func get_efficiency_cost() -> float:
+	var economy = _get_economy()
+	return economy.get_efficiency_cost(efficiency_level) * get_global_price_discount_multiplier()
+
+func get_click_cost() -> float:
+	var economy = _get_economy()
+	return economy.get_click_cost(click_level) * get_global_price_discount_multiplier()
+
+func get_mining_tool_cost(tool_id: String) -> float:
+	return Economy.get_mining_tool_cost(tool_id) * get_global_price_discount_multiplier()
+
 func spend(cost: float) -> bool:
 	if not can_afford(cost):
 		return false
@@ -298,8 +472,7 @@ func spend(cost: float) -> bool:
 	return true
 
 func buy_drone() -> bool:
-	var economy = _get_economy()
-	var cost: float = economy.get_drone_cost(drones_owned)
+	var cost: float = get_drone_cost()
 	if not spend(cost):
 		return false
 	drones_owned += 1
@@ -308,8 +481,7 @@ func buy_drone() -> bool:
 	return true
 
 func buy_efficiency_upgrade() -> bool:
-	var economy = _get_economy()
-	var cost: float = economy.get_efficiency_cost(efficiency_level)
+	var cost: float = get_efficiency_cost()
 	if not spend(cost):
 		return false
 	efficiency_level += 1
@@ -317,8 +489,7 @@ func buy_efficiency_upgrade() -> bool:
 	return true
 
 func buy_click_upgrade() -> bool:
-	var economy = _get_economy()
-	var cost: float = economy.get_click_cost(click_level)
+	var cost: float = get_click_cost()
 	if not spend(cost):
 		return false
 	click_level += 1
@@ -547,6 +718,8 @@ func save_game() -> void:
 		"max_efficiency_limit": max_efficiency_limit,
 		"max_click_limit": max_click_limit,
 		"last_save_unix": last_save_unix,
+		"ascension_points": ascension_points,
+		"ascension_upgrades": ascension_upgrades,
 		"market_base_seed": Market.base_seed,
 		"market_refresh_index": Market.refresh_index,
 		"market_next_refresh_unix": Market.next_refresh_unix,
@@ -567,6 +740,7 @@ func load_game() -> void:
 		emit_signal("cash_changed", cash)
 		emit_signal("minerals_changed")
 		emit_signal("stats_changed")
+		emit_signal("ascension_changed")
 		return
 
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
@@ -632,6 +806,15 @@ func load_game() -> void:
 		overclock_time_left = 0.0
 		overclock_active = false
 	last_save_unix = int(data.get("last_save_unix", Time.get_unix_time_from_system()))
+	ascension_points = max(0.0, float(data.get("ascension_points", 0.0)))
+	ascension_upgrades = {}
+	var saved_ascension_upgrades: Variant = data.get("ascension_upgrades", {})
+	if saved_ascension_upgrades is Dictionary:
+		for key in saved_ascension_upgrades.keys():
+			var id: String = str(key)
+			if not ASCENSION_UPGRADES_DEF.has(id):
+				continue
+			ascension_upgrades[id] = int(max(0, int(saved_ascension_upgrades[key])))
 
 	Market.ensure_initialized()
 	Market.base_seed = int(data.get("market_base_seed", Market.base_seed))
@@ -649,6 +832,7 @@ func load_game() -> void:
 	emit_signal("cash_changed", cash)
 	emit_signal("minerals_changed")
 	emit_signal("stats_changed")
+	emit_signal("ascension_changed")
 
 func apply_offline_progress(emit_signals: bool = true) -> void:
 	var now: int = Time.get_unix_time_from_system()
@@ -703,3 +887,15 @@ func debug_grant_all_tools() -> void:
 
 func debug_set_equipped_tool(tool_id: String) -> void:
 	equip_tool(tool_id)
+
+func debug_grant_ap(points: float) -> void:
+	if points <= 0.0:
+		return
+	ascension_points += points
+	emit_signal("ascension_changed")
+	emit_signal("stats_changed")
+
+func debug_set_ap(points: float) -> void:
+	ascension_points = max(0.0, points)
+	emit_signal("ascension_changed")
+	emit_signal("stats_changed")

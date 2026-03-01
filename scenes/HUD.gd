@@ -13,6 +13,7 @@ extends Control
 @onready var open_upgrades_button: Button = $VBox/MenuButtonsRow/OpenUpgradesButton
 @onready var open_automation_button: Button = $VBox/MenuButtonsRow/OpenAutomationButton
 @onready var open_market_button: Button = $VBox/MenuButtonsRow/OpenMarketButton
+@onready var prestige_button: Button = $VBox/MenuButtonsRow/PrestigeButton
 @onready var upgrades_popup: PanelContainer = $UpgradesPopup
 @onready var close_upgrades_button: Button = $UpgradesPopup/PopupRoot/Header/CloseButton
 @onready var automation_popup: PanelContainer = $AutomationPopup
@@ -23,6 +24,8 @@ extends Control
 @onready var efficiency_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/EfficiencyButton
 @onready var click_power_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/ClickPowerButton
 @onready var tools_list: VBoxContainer = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/ToolsList
+@onready var ascension_points_label: Label = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/AscensionPointsLabel
+@onready var ascension_upgrades_list: VBoxContainer = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/AscensionUpgradesList
 @onready var automation_note_label: Label = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutomationNoteLabel
 @onready var buy_auto_overclock_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyAutoOverclockButton
 @onready var auto_overclock_toggle: CheckBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoOverclockToggleIndent/AutoOverclockToggleRow/AutoOverclockToggle
@@ -47,6 +50,7 @@ extends Control
 @onready var sell_all_materials_button: Button = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/SellAllMaterialsButton
 @onready var market_refresh_label: Label = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/MarketRefreshLabel
 @onready var materials_list: VBoxContainer = $MarketPopup/PopupRoot/ContentMargin/Scroll/VBox/MaterialsList
+@onready var prestige_confirm_dialog: ConfirmationDialog = $PrestigeConfirmDialog
 
 var autosave_elapsed: float = 0.0
 var overclock_ui_elapsed: float = 0.0
@@ -62,6 +66,7 @@ func _ready() -> void:
 	GameState.cash_changed.connect(_on_cash_changed)
 	GameState.minerals_changed.connect(_on_minerals_changed)
 	GameState.stats_changed.connect(_on_stats_changed)
+	GameState.ascension_changed.connect(_on_ascension_changed)
 	Market.market_updated.connect(_on_market_updated)
 	mine_button.pressed.connect(_on_mine_pressed)
 	overclock_button.pressed.connect(_on_overclock_pressed)
@@ -88,6 +93,8 @@ func _ready() -> void:
 	close_automation_button.pressed.connect(_on_close_automation_pressed)
 	open_market_button.pressed.connect(_on_open_market_pressed)
 	close_market_button.pressed.connect(_on_close_market_pressed)
+	prestige_button.pressed.connect(_on_prestige_pressed)
+	prestige_confirm_dialog.confirmed.connect(_on_prestige_confirmed)
 	sell_all_materials_button.pressed.connect(_on_sell_all_materials_pressed)
 	refresh_ui()
 
@@ -152,6 +159,8 @@ func refresh_ui() -> void:
 	_refresh_stats_labels()
 	_refresh_upgrade_buttons()
 	_refresh_automation_popup_ui()
+	_refresh_prestige_button()
+	_refresh_ascension_upgrade_list()
 	_refresh_sell_all_button()
 	if market_popup.visible:
 		_update_market_refresh_label()
@@ -178,11 +187,12 @@ func _refresh_stats_labels() -> void:
 	rate_label.text = "Rate: %.1f/s" % GameState.get_ore_per_sec()
 	layer_label.text = "Layer: %s" % GameState.get_asteroid_layer_name()
 	mine_button.text = "MINE (+%.1f)" % GameState.get_click_gain()
+	ascension_points_label.text = "Ascension Points: %.0f" % GameState.ascension_points
 
 func _refresh_upgrade_buttons() -> void:
-	var drone_cost: float = Economy.get_drone_cost(GameState.drones_owned)
-	var efficiency_cost: float = Economy.get_efficiency_cost(GameState.efficiency_level)
-	var click_cost: float = Economy.get_click_cost(GameState.click_level)
+	var drone_cost: float = GameState.get_drone_cost()
+	var efficiency_cost: float = GameState.get_efficiency_cost()
+	var click_cost: float = GameState.get_click_cost()
 	buy_drone_button.text = "Buy Drone (%.1f)" % drone_cost
 	efficiency_button.text = "Upgrade Efficiency Lv.%d (%.1f)" % [GameState.efficiency_level, efficiency_cost]
 	click_power_button.text = "Upgrade Click Power Lv.%d (%.1f)" % [GameState.click_level, click_cost]
@@ -304,6 +314,50 @@ func _refresh_sell_all_button() -> void:
 			break
 	sell_all_materials_button.disabled = not has_materials
 
+func _refresh_prestige_button() -> void:
+	if GameState.can_prestige():
+		var reward: float = GameState.calculate_prestige_ap_reward()
+		prestige_button.text = "Prestige (+%.0f AP)" % reward
+		prestige_button.disabled = false
+	else:
+		var needed: float = max(GameState.PRESTIGE_UNLOCK_THRESHOLD - GameState.ore_mined_total, 0.0)
+		prestige_button.text = "Prestige Locked (%.0f ore to unlock)" % ceil(needed)
+		prestige_button.disabled = true
+
+func _refresh_ascension_upgrade_list() -> void:
+	for child in ascension_upgrades_list.get_children():
+		child.queue_free()
+
+	for id in GameState.get_ascension_upgrade_ids():
+		var def: Dictionary = GameState.get_ascension_upgrade_def(id)
+		if def.is_empty():
+			continue
+		var row: HBoxContainer = HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+
+		var level: int = GameState.get_ascension_upgrade_level(id)
+		var max_level: int = int(def.get("max_level", 1))
+		var is_maxed: bool = level >= max_level
+		var label: Label = Label.new()
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		label.text = "%s Lv.%d/%d\n%s" % [str(def.get("name", id)), level, max_level, str(def.get("desc", ""))]
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.add_child(label)
+
+		var buy_button: Button = Button.new()
+		buy_button.custom_minimum_size = Vector2(140, 0)
+		if is_maxed:
+			buy_button.text = "Maxed"
+			buy_button.disabled = true
+		else:
+			var cost: float = GameState.get_ascension_upgrade_cost(id)
+			buy_button.text = "Buy (%.0f AP)" % cost
+			buy_button.disabled = not GameState.can_buy_ascension_upgrade(id)
+			buy_button.pressed.connect(_on_buy_ascension_upgrade_pressed.bind(id))
+		row.add_child(buy_button)
+
+		ascension_upgrades_list.add_child(row)
+
 func _rebuild_mining_tools_list() -> void:
 	for child in tools_list.get_children():
 		child.queue_free()
@@ -334,7 +388,7 @@ func _rebuild_mining_tools_list() -> void:
 		text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var name: String = Economy.get_mining_tool_name(tool_id)
 		var desc: String = Economy.get_mining_tool_desc(tool_id)
-		var cost: float = Economy.get_mining_tool_cost(tool_id)
+		var cost: float = GameState.get_mining_tool_cost(tool_id)
 		var status: String = "Owned" if GameState.has_tool(tool_id) else "Locked"
 		if GameState.equipped_tool_id == tool_id:
 			status = "Equipped"
@@ -456,12 +510,14 @@ func _on_ore_changed(_value: Variant = null) -> void:
 	layer_label.text = "Layer: %s" % GameState.get_asteroid_layer_name()
 	mine_button.text = "MINE (+%.1f)" % GameState.get_click_gain()
 	_refresh_upgrade_buttons()
+	_refresh_prestige_button()
 
 func _on_cash_changed(_value: Variant = null) -> void:
 	_refresh_stats_labels()
 	if upgrades_popup.visible:
 		_tools_rebuild_pending = true
 		_tools_rebuild_cooldown = 0.0
+	_refresh_prestige_button()
 	_refresh_sell_all_button()
 
 func _on_minerals_changed(_value: Variant = null) -> void:
@@ -469,11 +525,19 @@ func _on_minerals_changed(_value: Variant = null) -> void:
 	_refresh_sell_all_button()
 	if market_popup.visible:
 		_materials_rebuild_pending = true
+	_refresh_prestige_button()
+
+func _on_ascension_changed() -> void:
+	_refresh_stats_labels()
+	_refresh_upgrade_buttons()
+	_refresh_prestige_button()
+	_refresh_ascension_upgrade_list()
 
 func _on_stats_changed(_value: Variant = null) -> void:
 	_refresh_stats_labels()
 	_refresh_upgrade_buttons()
 	_refresh_automation_popup_ui()
+	_refresh_prestige_button()
 	refresh_overclock_ui()
 	if upgrades_popup.visible:
 		_tools_rebuild_pending = true
@@ -556,6 +620,11 @@ func _on_equip_tool_pressed(tool_id: String) -> void:
 	GameState.equip_tool(tool_id)
 	_tools_rebuild_pending = true
 
+func _on_buy_ascension_upgrade_pressed(id: String) -> void:
+	if GameState.buy_ascension_upgrade(id):
+		_refresh_ascension_upgrade_list()
+		_refresh_upgrade_buttons()
+
 func _on_sell10_pressed(id: String) -> void:
 	GameState.sell_mineral(id, 10.0)
 
@@ -564,6 +633,21 @@ func _on_sellall_pressed(id: String) -> void:
 
 func _on_sell_all_materials_pressed() -> void:
 	GameState.sell_all_minerals()
+
+func _on_prestige_pressed() -> void:
+	if not GameState.can_prestige():
+		feedback_label.text = "Prestige unlocked at deeper cores!"
+		return
+	var reward: float = GameState.calculate_prestige_ap_reward()
+	prestige_confirm_dialog.dialog_text = "Prestige and gain %.0f AP? This will reset current run progress." % reward
+	prestige_confirm_dialog.popup_centered()
+
+func _on_prestige_confirmed() -> void:
+	var reward: float = GameState.prestige()
+	if reward > 0.0:
+		feedback_label.text = "Ascended! +%.0f AP" % reward
+	else:
+		feedback_label.text = "Prestige unlocked at deeper cores!"
 
 func show_feedback(gain: float) -> void:
 	feedback_serial += 1
@@ -589,6 +673,7 @@ func _on_open_upgrades_pressed() -> void:
 	upgrades_popup.visible = true
 	_refresh_stats_labels()
 	_refresh_upgrade_buttons()
+	_refresh_ascension_upgrade_list()
 	_tools_rebuild_pending = true
 	_tools_rebuild_cooldown = 0.0
 
