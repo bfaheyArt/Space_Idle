@@ -102,6 +102,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Mineral Market"
 
+[node name="PrestigeButton" type="Button" parent="VBox/MenuButtonsRow"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Prestige"
+
 [node name="FeedbackLabel" type="Label" parent="VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
@@ -184,6 +190,22 @@ theme_override_font_sizes/font_size = 18
 text = "Mining Tools"
 
 [node name="ToolsList" type="VBoxContainer" parent="UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AscensionSeparator" type="HSeparator" parent="UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox"]
+layout_mode = 2
+
+[node name="AscensionHeader" type="Label" parent="UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Ascension Upgrades"
+
+[node name="AscensionPointsLabel" type="Label" parent="UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox"]
+layout_mode = 2
+text = "Ascension Points: 0"
+
+[node name="AscensionUpgradesList" type="VBoxContainer" parent="UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
@@ -486,3 +508,11 @@ text = "Sell All Materials"
 [node name="MaterialsList" type="VBoxContainer" parent="MarketPopup/PopupRoot/ContentMargin/Scroll/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 6
+
+
+[node name="PrestigeConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "Confirm Prestige"
+size = Vector2i(460, 160)
+ok_button_text = "Prestige"
+cancel_button_text = "Cancel"
+dialog_text = "Prestige and gain AP? This will reset current run progress."
