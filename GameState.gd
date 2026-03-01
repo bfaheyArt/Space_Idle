@@ -111,13 +111,17 @@ func _calculate_layer_from_ore_mined(ore_mined: float) -> int:
 		return AsteroidLayer.MANTLE
 	return AsteroidLayer.CRUST
 
-func update_asteroid_layer() -> void:
+func _update_asteroid_layer_internal(emit_signals: bool) -> void:
 	var next_layer: int = _calculate_layer_from_ore_mined(ore_mined_total)
 	if next_layer == asteroid_layer:
 		return
 	asteroid_layer = next_layer
-	emit_signal("layer_changed", asteroid_layer)
-	emit_signal("stats_changed")
+	if emit_signals:
+		emit_signal("layer_changed", asteroid_layer)
+		emit_signal("stats_changed")
+
+func update_asteroid_layer() -> void:
+	_update_asteroid_layer_internal(true)
 
 func add_ore(amount: float) -> void:
 	if amount <= 0.0:
@@ -125,12 +129,17 @@ func add_ore(amount: float) -> void:
 	ore += amount
 	emit_signal("ore_changed", ore)
 
-func add_mined_ore(amount: float) -> void:
+func _add_mined_ore_internal(amount: float, emit_signals: bool) -> void:
 	if amount <= 0.0:
 		return
-	add_ore(amount)
+	ore += amount
 	ore_mined_total += amount
-	update_asteroid_layer()
+	if emit_signals:
+		emit_signal("ore_changed", ore)
+	_update_asteroid_layer_internal(emit_signals)
+
+func add_mined_ore(amount: float) -> void:
+	_add_mined_ore_internal(amount, true)
 
 func add_cash(amount: float) -> void:
 	if amount == 0.0:
@@ -600,9 +609,7 @@ func load_game() -> void:
 	if equipped_tool_id != "none" and not has_tool(equipped_tool_id):
 		equipped_tool_id = "none"
 	ore_mined_total = max(0.0, float(data.get("ore_mined_total", 0.0)))
-	asteroid_layer = int(data.get("asteroid_layer", _calculate_layer_from_ore_mined(ore_mined_total)))
-	asteroid_layer = int(clamp(asteroid_layer, AsteroidLayer.CRUST, AsteroidLayer.CORE))
-	update_asteroid_layer()
+	asteroid_layer = _calculate_layer_from_ore_mined(ore_mined_total)
 	click_level = int(data.get("click_level", 0))
 	overclock_charge = float(data.get("overclock_charge", 0.0))
 	overclock_active = bool(data.get("overclock_active", false))
@@ -637,13 +644,13 @@ func load_game() -> void:
 			Market.multipliers[str(key)] = float(saved_multipliers[key])
 	Market.update_market(Time.get_unix_time_from_system())
 
-	apply_offline_progress()
+	apply_offline_progress(false)
 	emit_signal("ore_changed", ore)
 	emit_signal("cash_changed", cash)
 	emit_signal("minerals_changed")
 	emit_signal("stats_changed")
 
-func apply_offline_progress() -> void:
+func apply_offline_progress(emit_signals: bool = true) -> void:
 	var now: int = Time.get_unix_time_from_system()
 	var elapsed: int = clamp(now - last_save_unix, 0, MAX_OFFLINE_SECONDS)
 	if elapsed <= 0:
@@ -661,8 +668,8 @@ func apply_offline_progress() -> void:
 			overclock_active = false
 
 	var normal_time: float = elapsed_f - boosted_time
-	add_mined_ore(base_rate * boosted_time * OVERCLOCK_MULTIPLIER)
-	add_mined_ore(base_rate * normal_time)
+	_add_mined_ore_internal(base_rate * boosted_time * OVERCLOCK_MULTIPLIER, emit_signals)
+	_add_mined_ore_internal(base_rate * normal_time, emit_signals)
 	last_save_unix = now
 
 func debug_grant_starting_resources() -> void:
