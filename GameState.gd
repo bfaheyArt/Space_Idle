@@ -16,6 +16,8 @@ var minerals: Dictionary = {}
 var drones_owned: int = 0
 var efficiency_level: int = 0
 var mining_table_id: String = "default"
+var owned_tools: Dictionary = {}
+var equipped_tool_id: String = "none"
 var ore_mined_total: float = 0.0
 var asteroid_layer: int = AsteroidLayer.CRUST
 var click_level: int = 0
@@ -94,6 +96,13 @@ func get_current_drop_table_id() -> String:
 			return "core"
 		_:
 			return "crust"
+
+func get_effective_drop_table_id() -> String:
+	var base_table_id: String = get_current_drop_table_id()
+	return Economy.get_tool_adjusted_table_id(base_table_id, equipped_tool_id)
+
+func get_effective_rarity_bonus() -> float:
+	return get_rarity_bonus() + Economy.get_tool_rarity_bonus_add(equipped_tool_id)
 
 func _calculate_layer_from_ore_mined(ore_mined: float) -> int:
 	if ore_mined >= CORE_THRESHOLD:
@@ -191,8 +200,8 @@ func clear_minerals() -> void:
 func manual_mine() -> void:
 	var gain: float = get_click_gain()
 	add_mined_ore(gain)
-	var table_id: String = get_current_drop_table_id()
-	var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, table_id, get_rarity_bonus())
+	var table_id: String = get_effective_drop_table_id()
+	var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, table_id, get_effective_rarity_bonus())
 	add_mineral(mineral_id, 1.0)
 	if not overclock_active:
 		overclock_charge = clamp(overclock_charge + CHARGE_PER_CLICK, 0.0, OVERCLOCK_MAX_CHARGE)
@@ -227,11 +236,47 @@ func update_overclock(delta: float) -> void:
 
 func update_mineral_mining(delta: float) -> void:
 	mining_roll_accumulator += get_mining_rolls_per_sec() * delta
-	var table_id: String = get_current_drop_table_id()
+	var table_id: String = get_effective_drop_table_id()
+	var rarity_bonus: float = get_effective_rarity_bonus()
 	while mining_roll_accumulator >= 1.0:
 		mining_roll_accumulator -= 1.0
-		var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, table_id, get_rarity_bonus())
+		var mineral_id: String = Economy.roll_mineral_from_table(_mining_rng, table_id, rarity_bonus)
 		add_mineral(mineral_id, 1.0)
+
+func has_tool(tool_id: String) -> bool:
+	if tool_id == "none":
+		return true
+	if Economy.get_mining_tool_def(tool_id).is_empty():
+		return false
+	return bool(owned_tools.get(tool_id, false))
+
+func can_buy_tool(tool_id: String) -> bool:
+	if tool_id == "none":
+		return false
+	var tool_def: Dictionary = Economy.get_mining_tool_def(tool_id)
+	if tool_def.is_empty() or has_tool(tool_id):
+		return false
+	return can_afford_cash(Economy.get_mining_tool_cost(tool_id))
+
+func buy_tool(tool_id: String) -> bool:
+	if not can_buy_tool(tool_id):
+		return false
+	if not spend_cash(Economy.get_mining_tool_cost(tool_id)):
+		return false
+	owned_tools[tool_id] = true
+	emit_signal("stats_changed")
+	return true
+
+func equip_tool(tool_id: String) -> void:
+	var next_tool_id: String = tool_id
+	if next_tool_id != "none" and not has_tool(next_tool_id):
+		return
+	if Economy.get_mining_tool_def(next_tool_id).is_empty() and next_tool_id != "none":
+		next_tool_id = "none"
+	if equipped_tool_id == next_tool_id:
+		return
+	equipped_tool_id = next_tool_id
+	emit_signal("stats_changed")
 
 func can_afford(cost: float) -> bool:
 	return ore >= cost
@@ -471,6 +516,8 @@ func save_game() -> void:
 		"drones_owned": drones_owned,
 		"efficiency_level": efficiency_level,
 		"mining_table_id": mining_table_id,
+		"owned_tools": owned_tools,
+		"equipped_tool_id": equipped_tool_id,
 		"ore_mined_total": ore_mined_total,
 		"asteroid_layer": asteroid_layer,
 		"click_level": click_level,
@@ -538,6 +585,20 @@ func load_game() -> void:
 	mining_table_id = str(data.get("mining_table_id", "default"))
 	if mining_table_id.is_empty():
 		mining_table_id = "default"
+	owned_tools = {}
+	var saved_tools: Variant = data.get("owned_tools", {})
+	if saved_tools is Dictionary:
+		for key in saved_tools.keys():
+			var tool_id: String = str(key)
+			if tool_id == "none":
+				continue
+			if Economy.get_mining_tool_def(tool_id).is_empty():
+				continue
+			if bool(saved_tools[key]):
+				owned_tools[tool_id] = true
+	equipped_tool_id = str(data.get("equipped_tool_id", "none"))
+	if equipped_tool_id != "none" and not has_tool(equipped_tool_id):
+		equipped_tool_id = "none"
 	ore_mined_total = max(0.0, float(data.get("ore_mined_total", 0.0)))
 	asteroid_layer = int(data.get("asteroid_layer", _calculate_layer_from_ore_mined(ore_mined_total)))
 	asteroid_layer = int(clamp(asteroid_layer, AsteroidLayer.CRUST, AsteroidLayer.CORE))
@@ -617,3 +678,21 @@ func debug_grant_test_minerals() -> void:
 func debug_set_ore_mined_total(value: float) -> void:
 	ore_mined_total = max(0.0, value)
 	update_asteroid_layer()
+
+func debug_grant_tool(tool_id: String) -> void:
+	if tool_id == "none":
+		return
+	if Economy.get_mining_tool_def(tool_id).is_empty():
+		return
+	owned_tools[tool_id] = true
+	emit_signal("stats_changed")
+
+func debug_grant_all_tools() -> void:
+	for tool_id in Economy.get_mining_tool_ids():
+		if tool_id == "none":
+			continue
+		owned_tools[tool_id] = true
+	emit_signal("stats_changed")
+
+func debug_set_equipped_tool(tool_id: String) -> void:
+	equip_tool(tool_id)
