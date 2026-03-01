@@ -22,6 +22,7 @@ extends Control
 @onready var buy_drone_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyDroneButton
 @onready var efficiency_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/EfficiencyButton
 @onready var click_power_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/ClickPowerButton
+@onready var tools_list: VBoxContainer = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/ToolsList
 @onready var automation_note_label: Label = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutomationNoteLabel
 @onready var buy_auto_overclock_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyAutoOverclockButton
 @onready var auto_overclock_toggle: CheckBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoOverclockToggleIndent/AutoOverclockToggleRow/AutoOverclockToggle
@@ -52,13 +53,15 @@ var overclock_ui_elapsed: float = 0.0
 var feedback_serial: int = 0
 var _materials_rebuild_pending: bool = false
 var _materials_rebuild_cooldown: float = 0.0
+var _tools_rebuild_pending: bool = false
+var _tools_rebuild_cooldown: float = 0.0
 var _market_countdown_update_elapsed: float = 0.0
 
 func _ready() -> void:
-	GameState.ore_changed.connect(_on_game_state_changed)
-	GameState.cash_changed.connect(_on_game_state_changed)
-	GameState.minerals_changed.connect(_on_game_state_changed)
-	GameState.stats_changed.connect(_on_game_state_changed)
+	GameState.ore_changed.connect(_on_ore_changed)
+	GameState.cash_changed.connect(_on_cash_changed)
+	GameState.minerals_changed.connect(_on_minerals_changed)
+	GameState.stats_changed.connect(_on_stats_changed)
 	Market.market_updated.connect(_on_market_updated)
 	mine_button.pressed.connect(_on_mine_pressed)
 	overclock_button.pressed.connect(_on_overclock_pressed)
@@ -87,7 +90,6 @@ func _ready() -> void:
 	close_market_button.pressed.connect(_on_close_market_pressed)
 	sell_all_materials_button.pressed.connect(_on_sell_all_materials_pressed)
 	refresh_ui()
-	_update_market_refresh_label()
 
 func _process(delta: float) -> void:
 	var now_unix: int = int(Time.get_unix_time_from_system())
@@ -100,7 +102,7 @@ func _process(delta: float) -> void:
 
 	if market_popup.visible:
 		_market_countdown_update_elapsed += delta
-		if _market_countdown_update_elapsed >= 0.25:
+		if _market_countdown_update_elapsed >= 0.5:
 			_market_countdown_update_elapsed = 0.0
 			_update_market_refresh_label()
 	else:
@@ -124,6 +126,16 @@ func _process(delta: float) -> void:
 		_materials_rebuild_pending = false
 		_materials_rebuild_cooldown = 0.0
 
+	if upgrades_popup.visible:
+		_tools_rebuild_cooldown = max(_tools_rebuild_cooldown - delta, 0.0)
+		if _tools_rebuild_pending and _tools_rebuild_cooldown <= 0.0:
+			_tools_rebuild_pending = false
+			_tools_rebuild_cooldown = 0.25
+			_rebuild_mining_tools_list()
+	else:
+		_tools_rebuild_pending = false
+		_tools_rebuild_cooldown = 0.0
+
 	autosave_elapsed += delta
 	if autosave_elapsed >= 30.0:
 		autosave_elapsed = 0.0
@@ -137,19 +149,15 @@ func _notification(what: int) -> void:
 		GameState.save_game()
 
 func refresh_ui() -> void:
-	var ore_per_sec: float = GameState.get_ore_per_sec()
-	var click_gain: float = GameState.get_click_gain()
-	var drone_cost: float = Economy.get_drone_cost(GameState.drones_owned)
-	var efficiency_cost: float = Economy.get_efficiency_cost(GameState.efficiency_level)
-	var click_cost: float = Economy.get_click_cost(GameState.click_level)
-	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
-	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
-	var auto_buy_eff_cost: float = Economy.get_auto_buy_eff_cost(GameState.has_auto_buy_efficiency)
-	var auto_buy_click_cost: float = Economy.get_auto_buy_click_cost(GameState.has_auto_buy_click)
-	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
+	_refresh_stats_labels()
+	_refresh_upgrade_buttons()
+	_refresh_automation_popup()
+	_refresh_sell_all_button()
+	if market_popup.visible:
+		_update_market_refresh_label()
+	refresh_overclock_ui()
 
-	ore_label.text = "Ore: %.1f" % GameState.ore
-	cash_label.text = "Cash: %.1f" % GameState.cash
+func _refresh_mineral_summary() -> void:
 	var parts: Array[String] = []
 	var ids: Array[String] = Economy.get_mineral_ids()
 	ids.sort_custom(func(a: String, b: String) -> bool:
@@ -162,17 +170,32 @@ func refresh_ui() -> void:
 	for id: String in ids:
 		parts.append("%s: %.1f" % [Economy.get_mineral_name(id), GameState.get_mineral_amount(id)])
 	mineral_label.text = " | ".join(parts)
-	rate_label.text = "Rate: %.1f/s" % ore_per_sec
+
+func _refresh_stats_labels() -> void:
+	ore_label.text = "Ore: %.1f" % GameState.ore
+	cash_label.text = "Cash: %.1f" % GameState.cash
+	_refresh_mineral_summary()
+	rate_label.text = "Rate: %.1f/s" % GameState.get_ore_per_sec()
 	layer_label.text = "Layer: %s" % GameState.get_asteroid_layer_name()
-	_update_market_refresh_label()
-	mine_button.text = "MINE (+%.1f)" % click_gain
+	mine_button.text = "MINE (+%.1f)" % GameState.get_click_gain()
+
+func _refresh_upgrade_buttons() -> void:
+	var drone_cost: float = Economy.get_drone_cost(GameState.drones_owned)
+	var efficiency_cost: float = Economy.get_efficiency_cost(GameState.efficiency_level)
+	var click_cost: float = Economy.get_click_cost(GameState.click_level)
 	buy_drone_button.text = "Buy Drone (%.1f)" % drone_cost
 	efficiency_button.text = "Upgrade Efficiency Lv.%d (%.1f)" % [GameState.efficiency_level, efficiency_cost]
 	click_power_button.text = "Upgrade Click Power Lv.%d (%.1f)" % [GameState.click_level, click_cost]
-
 	buy_drone_button.disabled = not GameState.can_afford(drone_cost)
 	efficiency_button.disabled = not GameState.can_afford(efficiency_cost)
 	click_power_button.disabled = not GameState.can_afford(click_cost)
+
+func _refresh_automation_popup() -> void:
+	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
+	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
+	var auto_buy_eff_cost: float = Economy.get_auto_buy_eff_cost(GameState.has_auto_buy_efficiency)
+	var auto_buy_click_cost: float = Economy.get_auto_buy_click_cost(GameState.has_auto_buy_click)
+	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
 
 	if GameState.has_auto_overclock:
 		buy_auto_overclock_button.text = "Auto Overclock Purchased"
@@ -266,6 +289,7 @@ func refresh_ui() -> void:
 		max_efficiency_spin.set_value_no_signal(0.0)
 		max_click_spin.set_value_no_signal(0.0)
 
+func _refresh_sell_all_button() -> void:
 	var has_materials: bool = false
 	for id in Economy.get_mineral_ids():
 		if GameState.get_mineral_amount(id) > 0.0:
@@ -273,7 +297,61 @@ func refresh_ui() -> void:
 			break
 	sell_all_materials_button.disabled = not has_materials
 
-	refresh_overclock_ui()
+func _rebuild_mining_tools_list() -> void:
+	for child in tools_list.get_children():
+		child.queue_free()
+
+	var none_row: HBoxContainer = HBoxContainer.new()
+	none_row.add_theme_constant_override("separation", 8)
+	var none_label: Label = Label.new()
+	none_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	none_label.text = "None - No tool equipped."
+	none_row.add_child(none_label)
+	var equip_none_button: Button = Button.new()
+	equip_none_button.text = "Equipped" if GameState.equipped_tool_id == "none" else "Equip None"
+	equip_none_button.disabled = GameState.equipped_tool_id == "none"
+	equip_none_button.pressed.connect(_on_equip_tool_pressed.bind("none"))
+	none_row.add_child(equip_none_button)
+	tools_list.add_child(none_row)
+
+	var ids: Array[String] = Economy.get_mining_tool_ids()
+	ids.sort()
+	for tool_id in ids:
+		if tool_id == "none":
+			continue
+
+		var row: HBoxContainer = HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+
+		var text_label: Label = Label.new()
+		text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var name: String = Economy.get_mining_tool_name(tool_id)
+		var desc: String = Economy.get_mining_tool_desc(tool_id)
+		var cost: float = Economy.get_mining_tool_cost(tool_id)
+		var status: String = "Owned" if GameState.has_tool(tool_id) else "Locked"
+		if GameState.equipped_tool_id == tool_id:
+			status = "Equipped"
+		text_label.text = "%s (%.1f cash) - %s [%s]" % [name, cost, desc, status]
+		row.add_child(text_label)
+
+		var buy_button: Button = Button.new()
+		if GameState.has_tool(tool_id):
+			buy_button.text = "Owned"
+			buy_button.disabled = true
+		else:
+			buy_button.text = "Buy"
+			buy_button.disabled = not GameState.can_buy_tool(tool_id)
+			buy_button.pressed.connect(_on_buy_tool_pressed.bind(tool_id))
+		row.add_child(buy_button)
+
+		var equip_button: Button = Button.new()
+		equip_button.text = "Equipped" if GameState.equipped_tool_id == tool_id else "Equip"
+		equip_button.disabled = not GameState.has_tool(tool_id) or GameState.equipped_tool_id == tool_id
+		if not equip_button.disabled:
+			equip_button.pressed.connect(_on_equip_tool_pressed.bind(tool_id))
+		row.add_child(equip_button)
+
+		tools_list.add_child(row)
 
 func rebuild_materials_list() -> void:
 	for child in materials_list.get_children():
@@ -365,15 +443,38 @@ func refresh_overclock_ui() -> void:
 		overclock_bar.value = GameState.overclock_charge
 		overclock_label.text = "Charge: %.0f / %.0f" % [GameState.overclock_charge, GameState.OVERCLOCK_MAX_CHARGE]
 
-func _on_game_state_changed(_value: Variant = null) -> void:
-	refresh_ui()
+func _on_ore_changed(_value: Variant = null) -> void:
+	ore_label.text = "Ore: %.1f" % GameState.ore
+	rate_label.text = "Rate: %.1f/s" % GameState.get_ore_per_sec()
+	layer_label.text = "Layer: %s" % GameState.get_asteroid_layer_name()
+	mine_button.text = "MINE (+%.1f)" % GameState.get_click_gain()
+	_refresh_upgrade_buttons()
+
+func _on_cash_changed(_value: Variant = null) -> void:
+	cash_label.text = "Cash: %.1f" % GameState.cash
+	if upgrades_popup.visible:
+		_tools_rebuild_pending = true
+	_refresh_sell_all_button()
+
+func _on_minerals_changed(_value: Variant = null) -> void:
+	_refresh_mineral_summary()
+	_refresh_sell_all_button()
 	if market_popup.visible:
 		_materials_rebuild_pending = true
 
+func _on_stats_changed(_value: Variant = null) -> void:
+	_refresh_stats_labels()
+	_refresh_upgrade_buttons()
+	_refresh_automation_popup()
+	refresh_overclock_ui()
+	if upgrades_popup.visible:
+		_tools_rebuild_pending = true
+	if market_popup.visible:
+		_materials_rebuild_pending = true
 
 func _on_market_updated() -> void:
-	_update_market_refresh_label()
 	if market_popup.visible:
+		_update_market_refresh_label()
 		_materials_rebuild_pending = true
 
 func _update_market_refresh_label() -> void:
@@ -438,6 +539,15 @@ func _on_max_efficiency_changed(value: float) -> void:
 func _on_max_click_changed(value: float) -> void:
 	GameState.set_max_click_limit(int(value))
 
+
+func _on_buy_tool_pressed(tool_id: String) -> void:
+	if GameState.buy_tool(tool_id):
+		_tools_rebuild_pending = true
+
+func _on_equip_tool_pressed(tool_id: String) -> void:
+	GameState.equip_tool(tool_id)
+	_tools_rebuild_pending = true
+
 func _on_sell10_pressed(id: String) -> void:
 	GameState.sell_mineral(id, 10.0)
 
@@ -469,7 +579,11 @@ func close_all_popups() -> void:
 func _on_open_upgrades_pressed() -> void:
 	close_all_popups()
 	upgrades_popup.visible = true
-	refresh_ui()
+	_refresh_stats_labels()
+	_refresh_upgrade_buttons()
+	_tools_rebuild_pending = true
+	_tools_rebuild_cooldown = 0.0
+	_rebuild_mining_tools_list()
 
 func _on_close_upgrades_pressed() -> void:
 	upgrades_popup.visible = false
@@ -477,7 +591,10 @@ func _on_close_upgrades_pressed() -> void:
 func _on_open_automation_pressed() -> void:
 	close_all_popups()
 	automation_popup.visible = true
-	refresh_ui()
+	_refresh_stats_labels()
+	_refresh_upgrade_buttons()
+	_refresh_automation_popup()
+	refresh_overclock_ui()
 
 func _on_close_automation_pressed() -> void:
 	automation_popup.visible = false
@@ -486,10 +603,12 @@ func _on_open_market_pressed() -> void:
 	close_all_popups()
 	market_popup.visible = true
 	Market.update_market(int(Time.get_unix_time_from_system()))
+	_update_market_refresh_label()
 	rebuild_materials_list()
 	_materials_rebuild_pending = false
 	_materials_rebuild_cooldown = 0.2
-	refresh_ui()
+	_refresh_stats_labels()
+	_refresh_sell_all_button()
 
 func _on_close_market_pressed() -> void:
 	market_popup.visible = false
