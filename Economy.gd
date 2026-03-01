@@ -65,6 +65,40 @@ const DROP_TABLES := {
 	},
 }
 
+const MINING_TOOLS := {
+	"none": {
+		"name": "None",
+		"cost": 0.0,
+		"desc": "No tool equipped.",
+	},
+	"core_drill": {
+		"name": "Core Drill",
+		"cost": 250.0,
+		"desc": "Bias towards deeper-core composition.",
+		"table_map": {
+			"crust": "mantle",
+			"mantle": "core",
+			"core": "core",
+		},
+	},
+	"deep_scanner": {
+		"name": "Deep Scanner",
+		"cost": 400.0,
+		"desc": "Finds rarer veins without changing layer.",
+		"rarity_bonus_add": 1.0,
+	},
+	"crust_sifter": {
+		"name": "Crust Sifter",
+		"cost": 120.0,
+		"desc": "More common ore, less rare.",
+		"table_map": {
+			"crust": "crust",
+			"mantle": "crust",
+			"core": "mantle",
+		},
+	},
+}
+
 func get_mineral_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for id in MINERALS.keys():
@@ -104,6 +138,48 @@ func get_drop_table(table_id: String) -> Dictionary:
 	if table_id.is_empty() or not DROP_TABLES.has(table_id):
 		return DROP_TABLES.get("default", {})
 	return DROP_TABLES[table_id]
+
+func get_mining_tool_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for id in MINING_TOOLS.keys():
+		ids.append(str(id))
+	return ids
+
+func get_mining_tool_def(id: String) -> Dictionary:
+	if id.is_empty() or not MINING_TOOLS.has(id):
+		return {}
+	return MINING_TOOLS[id]
+
+func get_mining_tool_name(id: String) -> String:
+	var tool_def: Dictionary = get_mining_tool_def(id)
+	return str(tool_def.get("name", ""))
+
+func get_mining_tool_cost(id: String) -> float:
+	var tool_def: Dictionary = get_mining_tool_def(id)
+	return float(tool_def.get("cost", 0.0))
+
+func get_mining_tool_desc(id: String) -> String:
+	var tool_def: Dictionary = get_mining_tool_def(id)
+	return str(tool_def.get("desc", ""))
+
+func get_tool_adjusted_table_id(base_table_id: String, tool_id: String) -> String:
+	if tool_id.is_empty() or tool_id == "none":
+		return base_table_id
+	var tool_def: Dictionary = get_mining_tool_def(tool_id)
+	if tool_def.is_empty():
+		return base_table_id
+	var table_map: Variant = tool_def.get("table_map", {})
+	if table_map is Dictionary and table_map.has(base_table_id):
+		return str(table_map[base_table_id])
+	return base_table_id
+
+func get_tool_rarity_bonus_add(tool_id: String) -> float:
+	if tool_id.is_empty() or tool_id == "none":
+		return 0.0
+	var tool_def: Dictionary = get_mining_tool_def(tool_id)
+	if tool_def.is_empty():
+		return 0.0
+	return float(tool_def.get("rarity_bonus_add", 0.0))
 
 func roll_mineral_from_table(
 	rng: RandomNumberGenerator,
