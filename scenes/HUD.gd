@@ -591,7 +591,6 @@ func _on_open_upgrades_pressed() -> void:
 	_refresh_upgrade_buttons()
 	_tools_rebuild_pending = true
 	_tools_rebuild_cooldown = 0.0
-	_rebuild_mining_tools_list()
 
 func _on_close_upgrades_pressed() -> void:
 	upgrades_popup.visible = false
