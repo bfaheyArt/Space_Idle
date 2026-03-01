@@ -151,7 +151,7 @@ func _notification(what: int) -> void:
 func refresh_ui() -> void:
 	_refresh_stats_labels()
 	_refresh_upgrade_buttons()
-	_refresh_automation_popup()
+	_refresh_automation_popup_ui()
 	_refresh_sell_all_button()
 	if market_popup.visible:
 		_update_market_refresh_label()
@@ -199,6 +199,13 @@ func _refresh_automation_popup() -> void:
 	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
 
 func _refresh_automation_popup() -> void:
+	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
+	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
+	var auto_buy_eff_cost: float = Economy.get_auto_buy_eff_cost(GameState.has_auto_buy_efficiency)
+	var auto_buy_click_cost: float = Economy.get_auto_buy_click_cost(GameState.has_auto_buy_click)
+	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
+
+func _refresh_automation_popup_ui() -> void:
 	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
 	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
 	var auto_buy_eff_cost: float = Economy.get_auto_buy_eff_cost(GameState.has_auto_buy_efficiency)
@@ -473,7 +480,7 @@ func _on_minerals_changed(_value: Variant = null) -> void:
 func _on_stats_changed(_value: Variant = null) -> void:
 	_refresh_stats_labels()
 	_refresh_upgrade_buttons()
-	_refresh_automation_popup()
+	_refresh_automation_popup_ui()
 	refresh_overclock_ui()
 	if upgrades_popup.visible:
 		_tools_rebuild_pending = true
@@ -601,7 +608,7 @@ func _on_open_automation_pressed() -> void:
 	automation_popup.visible = true
 	_refresh_stats_labels()
 	_refresh_upgrade_buttons()
-	_refresh_automation_popup()
+	_refresh_automation_popup_ui()
 	refresh_overclock_ui()
 
 func _on_close_automation_pressed() -> void:
