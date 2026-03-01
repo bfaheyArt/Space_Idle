@@ -22,6 +22,7 @@ extends Control
 @onready var buy_drone_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyDroneButton
 @onready var efficiency_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/EfficiencyButton
 @onready var click_power_button: Button = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/ClickPowerButton
+@onready var tools_list: VBoxContainer = $UpgradesPopup/PopupRoot/ContentMargin/Scroll/VBox/ToolsList
 @onready var automation_note_label: Label = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutomationNoteLabel
 @onready var buy_auto_overclock_button: Button = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/BuyAutoOverclockButton
 @onready var auto_overclock_toggle: CheckBox = $AutomationPopup/PopupRoot/ContentMargin/Scroll/VBox/AutoOverclockToggleIndent/AutoOverclockToggleRow/AutoOverclockToggle
@@ -173,6 +174,7 @@ func refresh_ui() -> void:
 	buy_drone_button.disabled = not GameState.can_afford(drone_cost)
 	efficiency_button.disabled = not GameState.can_afford(efficiency_cost)
 	click_power_button.disabled = not GameState.can_afford(click_cost)
+	_rebuild_tools_list()
 
 	if GameState.has_auto_overclock:
 		buy_auto_overclock_button.text = "Auto Overclock Purchased"
@@ -274,6 +276,62 @@ func refresh_ui() -> void:
 	sell_all_materials_button.disabled = not has_materials
 
 	refresh_overclock_ui()
+
+func _rebuild_tools_list() -> void:
+	for child in tools_list.get_children():
+		child.queue_free()
+
+	var none_row: HBoxContainer = HBoxContainer.new()
+	none_row.add_theme_constant_override("separation", 8)
+	var none_label: Label = Label.new()
+	none_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	none_label.text = "None - No tool equipped."
+	none_row.add_child(none_label)
+	var equip_none_button: Button = Button.new()
+	equip_none_button.text = "Equipped" if GameState.equipped_tool_id == "none" else "Equip None"
+	equip_none_button.disabled = GameState.equipped_tool_id == "none"
+	equip_none_button.pressed.connect(_on_equip_tool_pressed.bind("none"))
+	none_row.add_child(equip_none_button)
+	tools_list.add_child(none_row)
+
+	var ids: Array[String] = Economy.get_mining_tool_ids()
+	ids.sort()
+	for tool_id in ids:
+		if tool_id == "none":
+			continue
+
+		var row: HBoxContainer = HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+
+		var text_label: Label = Label.new()
+		text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var name: String = Economy.get_mining_tool_name(tool_id)
+		var desc: String = Economy.get_mining_tool_desc(tool_id)
+		var cost: float = Economy.get_mining_tool_cost(tool_id)
+		var status: String = "Owned" if GameState.has_tool(tool_id) else "Locked"
+		if GameState.equipped_tool_id == tool_id:
+			status = "Equipped"
+		text_label.text = "%s (%.1f cash) - %s [%s]" % [name, cost, desc, status]
+		row.add_child(text_label)
+
+		var buy_button: Button = Button.new()
+		if GameState.has_tool(tool_id):
+			buy_button.text = "Owned"
+			buy_button.disabled = true
+		else:
+			buy_button.text = "Buy"
+			buy_button.disabled = not GameState.can_buy_tool(tool_id)
+			buy_button.pressed.connect(_on_buy_tool_pressed.bind(tool_id))
+		row.add_child(buy_button)
+
+		var equip_button: Button = Button.new()
+		equip_button.text = "Equipped" if GameState.equipped_tool_id == tool_id else "Equip"
+		equip_button.disabled = not GameState.has_tool(tool_id) or GameState.equipped_tool_id == tool_id
+		if not equip_button.disabled:
+			equip_button.pressed.connect(_on_equip_tool_pressed.bind(tool_id))
+		row.add_child(equip_button)
+
+		tools_list.add_child(row)
 
 func rebuild_materials_list() -> void:
 	for child in materials_list.get_children():
@@ -437,6 +495,13 @@ func _on_max_efficiency_changed(value: float) -> void:
 
 func _on_max_click_changed(value: float) -> void:
 	GameState.set_max_click_limit(int(value))
+
+
+func _on_buy_tool_pressed(tool_id: String) -> void:
+	GameState.buy_tool(tool_id)
+
+func _on_equip_tool_pressed(tool_id: String) -> void:
+	GameState.equip_tool(tool_id)
 
 func _on_sell10_pressed(id: String) -> void:
 	GameState.sell_mineral(id, 10.0)
