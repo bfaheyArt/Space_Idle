@@ -131,7 +131,7 @@ func _process(delta: float) -> void:
 		if _tools_rebuild_pending and _tools_rebuild_cooldown <= 0.0:
 			_tools_rebuild_pending = false
 			_tools_rebuild_cooldown = 0.25
-			_rebuild_tools_list()
+			_rebuild_mining_tools_list()
 	else:
 		_tools_rebuild_pending = false
 		_tools_rebuild_cooldown = 0.0
@@ -190,6 +190,13 @@ func _refresh_upgrade_buttons() -> void:
 	efficiency_button.disabled = not GameState.can_afford(efficiency_cost)
 	click_power_button.disabled = not GameState.can_afford(click_cost)
 	_rebuild_tools_list()
+
+func _refresh_automation_popup() -> void:
+	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
+	var auto_buy_drones_cost: float = Economy.get_auto_buy_drones_cost(GameState.has_auto_buy_drones)
+	var auto_buy_eff_cost: float = Economy.get_auto_buy_eff_cost(GameState.has_auto_buy_efficiency)
+	var auto_buy_click_cost: float = Economy.get_auto_buy_click_cost(GameState.has_auto_buy_click)
+	var auto_priority_cost: float = Economy.get_auto_priority_controller_cost(GameState.has_auto_priority_controller)
 
 func _refresh_automation_popup() -> void:
 	var auto_overclock_cost: float = Economy.get_auto_overclock_cost(GameState.has_auto_overclock)
@@ -298,63 +305,7 @@ func _refresh_sell_all_button() -> void:
 			break
 	sell_all_materials_button.disabled = not has_materials
 
-func _rebuild_tools_list() -> void:
-	for child in tools_list.get_children():
-		child.queue_free()
-
-	var none_row: HBoxContainer = HBoxContainer.new()
-	none_row.add_theme_constant_override("separation", 8)
-	var none_label: Label = Label.new()
-	none_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	none_label.text = "None - No tool equipped."
-	none_row.add_child(none_label)
-	var equip_none_button: Button = Button.new()
-	equip_none_button.text = "Equipped" if GameState.equipped_tool_id == "none" else "Equip None"
-	equip_none_button.disabled = GameState.equipped_tool_id == "none"
-	equip_none_button.pressed.connect(_on_equip_tool_pressed.bind("none"))
-	none_row.add_child(equip_none_button)
-	tools_list.add_child(none_row)
-
-	var ids: Array[String] = Economy.get_mining_tool_ids()
-	ids.sort()
-	for tool_id in ids:
-		if tool_id == "none":
-			continue
-
-		var row: HBoxContainer = HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-
-		var text_label: Label = Label.new()
-		text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var name: String = Economy.get_mining_tool_name(tool_id)
-		var desc: String = Economy.get_mining_tool_desc(tool_id)
-		var cost: float = Economy.get_mining_tool_cost(tool_id)
-		var status: String = "Owned" if GameState.has_tool(tool_id) else "Locked"
-		if GameState.equipped_tool_id == tool_id:
-			status = "Equipped"
-		text_label.text = "%s (%.1f cash) - %s [%s]" % [name, cost, desc, status]
-		row.add_child(text_label)
-
-		var buy_button: Button = Button.new()
-		if GameState.has_tool(tool_id):
-			buy_button.text = "Owned"
-			buy_button.disabled = true
-		else:
-			buy_button.text = "Buy"
-			buy_button.disabled = not GameState.can_buy_tool(tool_id)
-			buy_button.pressed.connect(_on_buy_tool_pressed.bind(tool_id))
-		row.add_child(buy_button)
-
-		var equip_button: Button = Button.new()
-		equip_button.text = "Equipped" if GameState.equipped_tool_id == tool_id else "Equip"
-		equip_button.disabled = not GameState.has_tool(tool_id) or GameState.equipped_tool_id == tool_id
-		if not equip_button.disabled:
-			equip_button.pressed.connect(_on_equip_tool_pressed.bind(tool_id))
-		row.add_child(equip_button)
-
-		tools_list.add_child(row)
-
-func _rebuild_tools_list() -> void:
+func _rebuild_mining_tools_list() -> void:
 	for child in tools_list.get_children():
 		child.queue_free()
 
@@ -640,7 +591,7 @@ func _on_open_upgrades_pressed() -> void:
 	_refresh_upgrade_buttons()
 	_tools_rebuild_pending = true
 	_tools_rebuild_cooldown = 0.0
-	_rebuild_tools_list()
+	_rebuild_mining_tools_list()
 
 func _on_close_upgrades_pressed() -> void:
 	upgrades_popup.visible = false
